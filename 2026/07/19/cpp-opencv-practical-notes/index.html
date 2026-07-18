@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><!-- hexo injector head_begin start --><script>if (!window.localStorage.getItem("theme")) { document.documentElement.classList.add("theme-light"); }</script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#3367D6"/>
+  <link rel="apple-touch-icon" href="/icons-192.png">
+  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="generator" content="Hexo 8.1.2">
+
+  
+    <meta name="description" content="记录学习、技术与生活">
+  
+
+  
+
+  
+    <meta name="author" content="afterTvT">
+  
+
+  
+
+  
+
+  <title>C++ OpenCV 实战笔记：从 Mat 到图像处理工程 | afterTvT 的博客</title>
+
+  
+
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+
+  
+
+  
+
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+  <div class="root-container">
+    
+<!-- header container -->
+<header class="header-container post">
+  
+    <div class="post-image" style="background-image: url(/images/opencv-cpp-cover.jpg)"></div>
+  
+
+  <!-- navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- logo -->
+    <div class="navbar-logo">
+      <a href="/">
+        
+          afterTvT 的博客
+        
+      </a>
+    </div>
+    <!-- link -->
+    <div class="navbar-link">
+      <div class="navbar-btn">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <ul class="navbar-list">
+        
+          <li class="navbar-list-item"><a href="/">首页</a></li>
+        
+          <li class="navbar-list-item"><a href="/archives">归档</a></li>
+        
+          <li class="navbar-list-item"><a href="/links">友链</a></li>
+        
+          <li class="navbar-list-item"><a href="/about">关于</a></li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <div class="header-content">
+      <div class="post-text layout-block">
+        <div class="layout-margin">
+          <h1 class="title-wrap">C++ OpenCV 实战笔记：从 Mat 到图像处理工程</h1>
+          <h2 class="title-sub-wrap">
+            <strong>afterTvT</strong>
+            <span>发布于</span>
+            <time  class="article-date" datetime="2026-07-18T20:00:00.000Z" itemprop="datePublished">2026-07-19</time>
+          </h2>
+          
+          
+          <ul class="wrap-list dark">
+  
+    <li><a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/">📒 技术笔记</a></li>
+    
+</ul>
+          <ul class="wrap-list dark">
+  
+    <li><a href="/tags/C/">🏷️ C++</a></li>
+  
+    <li><a href="/tags/OpenCV/">🏷️ OpenCV</a></li>
+  
+    <li><a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/">🏷️ 计算机视觉</a></li>
+  
+</ul>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  
+  
+</header>
+
+    <!-- 文章 -->
+
+<!-- 文章内容 -->
+<div class="body-container">
+  <article class="content-container layout-block post-container">
+    <div class="article-info">
+      
+      
+      
+      
+      <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
+        <p>这篇文章记录我用 C++ 写 OpenCV 时最常用、也最容易忘记的知识点。目标不是罗列所有模块，而是把一条典型工程链路讲清楚：读取输入、预处理、提取目标、显示或保存结果，并把内存、颜色、坐标、性能和部署里的坑提前记下来。</p>
+<span id="more"></span>
+
+<h2 id="一、工程准备：先让-CMake-找到-OpenCV"><a href="#一、工程准备：先让-CMake-找到-OpenCV" class="headerlink" title="一、工程准备：先让 CMake 找到 OpenCV"></a>一、工程准备：先让 CMake 找到 OpenCV</h2><p>推荐使用 CMake 管理 C++ 项目。系统安装 OpenCV 后，一个最小可用的 <code>CMakeLists.txt</code> 如下：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cmake_minimum_required</span>(VERSION <span class="number">3.16</span>)</span><br><span class="line"><span class="keyword">project</span>(opencv_demo LANGUAGES CXX)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_STANDARD <span class="number">17</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_STANDARD_REQUIRED <span class="keyword">ON</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">find_package</span>(OpenCV REQUIRED)</span><br><span class="line"></span><br><span class="line"><span class="keyword">add_executable</span>(opencv_demo main.cpp)</span><br><span class="line"><span class="keyword">target_link_libraries</span>(opencv_demo PRIVATE <span class="variable">$&#123;OpenCV_LIBS&#125;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>配置与构建命令：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cmake <span class="literal">-S</span> . <span class="literal">-B</span> build</span><br><span class="line">cmake <span class="literal">--build</span> build <span class="literal">--config</span> Release</span><br></pre></td></tr></table></figure>
+
+<p>如果 <code>find_package(OpenCV REQUIRED)</code> 找不到 OpenCV，可以在配置时指定安装目录：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cmake <span class="literal">-S</span> . <span class="literal">-B</span> build <span class="literal">-DOpenCV_DIR</span>=C:/opencv/build</span><br></pre></td></tr></table></figure>
+
+<p><code>OpenCV_DIR</code> 应指向包含 <code>OpenCVConfig.cmake</code> 的目录。Windows 上还要注意：Debug 程序需要对应的 Debug 库和 DLL，Release 程序也需要 Release DLL；两种配置混用通常会导致链接错误或程序无法启动。</p>
+<h2 id="二、最核心的类型：cv-Mat"><a href="#二、最核心的类型：cv-Mat" class="headerlink" title="二、最核心的类型：cv::Mat"></a>二、最核心的类型：cv::Mat</h2><p><code>cv::Mat</code> 是 OpenCV 的图像和矩阵容器。它既可以表示灰度图、彩色图，也可以表示变换矩阵、特征向量。</p>
+<p>常用属性：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cv::Mat image = cv::<span class="built_in">imread</span>(<span class="string">&quot;assets/test.jpg&quot;</span>, cv::IMREAD_COLOR);</span><br><span class="line"></span><br><span class="line">std::cout &lt;&lt; image.rows &lt;&lt; <span class="string">&quot; x &quot;</span> &lt;&lt; image.cols &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;channels: &quot;</span> &lt;&lt; image.<span class="built_in">channels</span>() &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;type: &quot;</span> &lt;&lt; image.<span class="built_in">type</span>() &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;empty: &quot;</span> &lt;&lt; image.<span class="built_in">empty</span>() &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>图像类型由深度和通道数构成。常见的有：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CV_8UC1</code></td>
+<td>8 位无符号，单通道灰度图</td>
+</tr>
+<tr>
+<td><code>CV_8UC3</code></td>
+<td>8 位无符号，三通道 BGR 图</td>
+</tr>
+<tr>
+<td><code>CV_8UC4</code></td>
+<td>8 位无符号，四通道 BGRA 图</td>
+</tr>
+<tr>
+<td><code>CV_32FC1</code></td>
+<td>32 位浮点，单通道矩阵</td>
+</tr>
+</tbody></table>
+<h3 id="浅拷贝和深拷贝"><a href="#浅拷贝和深拷贝" class="headerlink" title="浅拷贝和深拷贝"></a>浅拷贝和深拷贝</h3><p>这是 C++ OpenCV 中最重要的坑之一：<code>Mat</code> 赋值默认只复制头信息，底层像素数据仍然共享。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cv::Mat a = cv::<span class="built_in">imread</span>(<span class="string">&quot;assets/test.jpg&quot;</span>);</span><br><span class="line">cv::Mat b = a;          <span class="comment">// 浅拷贝：a 和 b 共用像素数据</span></span><br><span class="line">cv::Mat c = a.<span class="built_in">clone</span>();  <span class="comment">// 深拷贝：c 有独立像素数据</span></span><br><span class="line"></span><br><span class="line">b.<span class="built_in">setTo</span>(cv::<span class="built_in">Scalar</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>));  <span class="comment">// a 也会被改成红色</span></span><br></pre></td></tr></table></figure>
+
+<p>需要独立数据时使用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cv::Mat copy1 = source.<span class="built_in">clone</span>();</span><br><span class="line">source.<span class="built_in">copyTo</span>(copy1);</span><br></pre></td></tr></table></figure>
+
+<p>ROI（感兴趣区域）也是浅拷贝视图：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">cv::Rect <span class="title">roiRect</span><span class="params">(<span class="number">100</span>, <span class="number">80</span>, <span class="number">200</span>, <span class="number">160</span>)</span></span>; <span class="comment">// x, y, width, height</span></span><br><span class="line">cv::Mat roi = <span class="built_in">image</span>(roiRect);</span><br></pre></td></tr></table></figure>
+
+<p>修改 <code>roi</code> 会改到原始 <code>image</code>。另外 ROI 不能越界，工程里最好先与图像边界求交：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cv::Rect safeRoi = roiRect &amp; cv::<span class="built_in">Rect</span>(<span class="number">0</span>, <span class="number">0</span>, image.cols, image.rows);</span><br><span class="line"><span class="keyword">if</span> (safeRoi.<span class="built_in">area</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    cv::Mat roi = <span class="built_in">image</span>(safeRoi);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、读图、显示和保存"><a href="#三、读图、显示和保存" class="headerlink" title="三、读图、显示和保存"></a>三、读图、显示和保存</h2><h3 id="常用-API"><a href="#常用-API" class="headerlink" title="常用 API"></a>常用 API</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">cv::Mat <span class="title">cv::imread</span><span class="params">(<span class="type">const</span> cv::String&amp; filename, <span class="type">int</span> flags = cv::IMREAD_COLOR)</span></span>;</span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">cv::imwrite</span><span class="params">(<span class="type">const</span> cv::String&amp; filename, cv::InputArray img,</span></span></span><br><span class="line"><span class="params"><span class="function">                 <span class="type">const</span> std::vector&lt;<span class="type">int</span>&gt;&amp; params = &#123;&#125;)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::imshow</span><span class="params">(<span class="type">const</span> cv::String&amp; winname, cv::InputArray mat)</span></span>;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">cv::waitKey</span><span class="params">(<span class="type">int</span> delay = <span class="number">0</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::destroyAllWindows</span><span class="params">()</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>完整示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;opencv2/opencv.hpp&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    cv::Mat image = cv::<span class="built_in">imread</span>(<span class="string">&quot;assets/test.jpg&quot;</span>, cv::IMREAD_COLOR);</span><br><span class="line">    <span class="keyword">if</span> (image.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;无法读取图片，请检查路径、工作目录和编码格式。\n&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cv::<span class="built_in">imshow</span>(<span class="string">&quot;input&quot;</span>, image);</span><br><span class="line">    cv::<span class="built_in">imwrite</span>(<span class="string">&quot;output/copy.png&quot;</span>, image);</span><br><span class="line"></span><br><span class="line">    cv::<span class="built_in">waitKey</span>(<span class="number">0</span>);</span><br><span class="line">    cv::<span class="built_in">destroyAllWindows</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>waitKey()</code> 不只是“等待按键”。在 HighGUI 中，它负责处理窗口事件；漏掉它时，窗口可能不刷新，或刚显示就退出。</p>
+<h2 id="四、颜色空间：OpenCV-默认是-BGR，不是-RGB"><a href="#四、颜色空间：OpenCV-默认是-BGR，不是-RGB" class="headerlink" title="四、颜色空间：OpenCV 默认是 BGR，不是 RGB"></a>四、颜色空间：OpenCV 默认是 BGR，不是 RGB</h2><p>用 <code>imread(..., IMREAD_COLOR)</code> 读入的三通道图像顺序是 BGR。把它交给 Qt、OpenGL、Web 前端或某些深度学习框架时，常常需要转成 RGB。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::cvtColor</span><span class="params">(cv::InputArray src, cv::OutputArray dst, <span class="type">int</span> code,</span></span></span><br><span class="line"><span class="params"><span class="function">                  <span class="type">int</span> dstCn = <span class="number">0</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>常用转换：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cv::Mat gray, rgb, hsv;</span><br><span class="line">cv::<span class="built_in">cvtColor</span>(image, gray, cv::COLOR_BGR2GRAY);</span><br><span class="line">cv::<span class="built_in">cvtColor</span>(image, rgb,  cv::COLOR_BGR2RGB);</span><br><span class="line">cv::<span class="built_in">cvtColor</span>(image, hsv,  cv::COLOR_BGR2HSV);</span><br></pre></td></tr></table></figure>
+
+<p>HSV 很适合按颜色分割，因为色相、饱和度、亮度分开了；但 H 的范围不是 0 到 360，而是 0 到 179。红色跨越 HSV 范围两端，通常需要两段阈值后再合并。</p>
+<h2 id="五、基础预处理流水线"><a href="#五、基础预处理流水线" class="headerlink" title="五、基础预处理流水线"></a>五、基础预处理流水线</h2><p>下面是一条常见的“灰度化 -&gt; 去噪 -&gt; 二值化 -&gt; 形态学”链路，适合文档、零件、简单目标的初步分割：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cv::Mat gray, blur, binary, opened;</span><br><span class="line"></span><br><span class="line">cv::<span class="built_in">cvtColor</span>(image, gray, cv::COLOR_BGR2GRAY);</span><br><span class="line">cv::<span class="built_in">GaussianBlur</span>(gray, blur, cv::<span class="built_in">Size</span>(<span class="number">5</span>, <span class="number">5</span>), <span class="number">0.0</span>);</span><br><span class="line">cv::<span class="built_in">threshold</span>(blur, binary, <span class="number">0</span>, <span class="number">255</span>,</span><br><span class="line">              cv::THRESH_BINARY | cv::THRESH_OTSU);</span><br><span class="line"></span><br><span class="line">cv::Mat kernel = cv::<span class="built_in">getStructuringElement</span>(</span><br><span class="line">    cv::MORPH_RECT, cv::<span class="built_in">Size</span>(<span class="number">3</span>, <span class="number">3</span>));</span><br><span class="line">cv::<span class="built_in">morphologyEx</span>(binary, opened, cv::MORPH_OPEN, kernel);</span><br></pre></td></tr></table></figure>
+
+<p>相关 API：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::GaussianBlur</span><span class="params">(cv::InputArray src, cv::OutputArray dst,</span></span></span><br><span class="line"><span class="params"><span class="function">                      cv::Size ksize, <span class="type">double</span> sigmaX,</span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">double</span> sigmaY = <span class="number">0</span>, <span class="type">int</span> borderType = cv::BORDER_DEFAULT)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">double</span> <span class="title">cv::threshold</span><span class="params">(cv::InputArray src, cv::OutputArray dst,</span></span></span><br><span class="line"><span class="params"><span class="function">                     <span class="type">double</span> thresh, <span class="type">double</span> maxval, <span class="type">int</span> type)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function">cv::Mat <span class="title">cv::getStructuringElement</span><span class="params">(<span class="type">int</span> shape, cv::Size ksize,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  cv::Point anchor = cv::Point(<span class="number">-1</span>, <span class="number">-1</span>))</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::morphologyEx</span><span class="params">(cv::InputArray src, cv::OutputArray dst, <span class="type">int</span> op,</span></span></span><br><span class="line"><span class="params"><span class="function">                      cv::InputArray kernel, cv::Point anchor = cv::Point(<span class="number">-1</span>, <span class="number">-1</span>),</span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">int</span> iterations = <span class="number">1</span>, <span class="type">int</span> borderType = cv::BORDER_CONSTANT,</span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">const</span> cv::Scalar&amp; borderValue = cv::morphologyDefaultBorderValue())</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>形态学选择口诀：</p>
+<ul>
+<li><code>MORPH_OPEN</code>：先腐蚀再膨胀，去掉小白点。</li>
+<li><code>MORPH_CLOSE</code>：先膨胀再腐蚀，填补小黑洞、连接近邻区域。</li>
+<li><code>MORPH_GRADIENT</code>：膨胀减腐蚀，突出边缘。</li>
+</ul>
+<p>核尺寸不是越大越好。核过大会抹掉细节、粘连目标；先从 <code>3x3</code> 或 <code>5x5</code> 开始，再用数据调参。</p>
+<h2 id="六、轮廓、面积和外接矩形"><a href="#六、轮廓、面积和外接矩形" class="headerlink" title="六、轮廓、面积和外接矩形"></a>六、轮廓、面积和外接矩形</h2><p>二值图得到后，可以用轮廓找物体，再按面积过滤噪点。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">std::vector&lt;std::vector&lt;cv::Point&gt;&gt; contours;</span><br><span class="line">std::vector&lt;cv::Vec4i&gt; hierarchy;</span><br><span class="line"></span><br><span class="line">cv::<span class="built_in">findContours</span>(binary.<span class="built_in">clone</span>(), contours, hierarchy,</span><br><span class="line">                 cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; contour : contours) &#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">double</span> area = cv::<span class="built_in">contourArea</span>(contour);</span><br><span class="line">    <span class="keyword">if</span> (area &lt; <span class="number">500.0</span>) &#123;</span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> cv::Rect box = cv::<span class="built_in">boundingRect</span>(contour);</span><br><span class="line">    cv::<span class="built_in">rectangle</span>(image, box, cv::<span class="built_in">Scalar</span>(<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>), <span class="number">2</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>常用 API：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::findContours</span><span class="params">(cv::InputOutputArray image,</span></span></span><br><span class="line"><span class="params"><span class="function">                      std::vector&lt;std::vector&lt;cv::Point&gt;&gt;&amp; contours,</span></span></span><br><span class="line"><span class="params"><span class="function">                      std::vector&lt;cv::Vec4i&gt;&amp; hierarchy,</span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">int</span> mode, <span class="type">int</span> method,</span></span></span><br><span class="line"><span class="params"><span class="function">                      cv::Point offset = cv::Point())</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">double</span> <span class="title">cv::contourArea</span><span class="params">(cv::InputArray contour, <span class="type">bool</span> oriented = <span class="literal">false</span>)</span></span>;</span><br><span class="line"><span class="function">cv::Rect <span class="title">cv::boundingRect</span><span class="params">(cv::InputArray array)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">cv::rectangle</span><span class="params">(cv::InputOutputArray img, cv::Rect rec,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="type">const</span> cv::Scalar&amp; color, <span class="type">int</span> thickness = <span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="type">int</span> lineType = cv::LINE_8, <span class="type">int</span> shift = <span class="number">0</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>findContours</code> 会修改输入图像，因此工程中建议传入 <code>binary.clone()</code>，保留原始二值结果用于调试、显示或后续算法。</p>
+<h2 id="七、视频与摄像头：循环、退出和资源释放"><a href="#七、视频与摄像头：循环、退出和资源释放" class="headerlink" title="七、视频与摄像头：循环、退出和资源释放"></a>七、视频与摄像头：循环、退出和资源释放</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">cv::VideoCapture <span class="title">cap</span><span class="params">(<span class="number">0</span>)</span></span>; <span class="comment">// 0 通常表示默认摄像头</span></span><br><span class="line"><span class="keyword">if</span> (!cap.<span class="built_in">isOpened</span>()) &#123;</span><br><span class="line">    std::cerr &lt;&lt; <span class="string">&quot;无法打开摄像头。\n&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">cv::Mat frame;</span><br><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!cap.<span class="built_in">read</span>(frame) || frame.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cv::<span class="built_in">imshow</span>(<span class="string">&quot;camera&quot;</span>, frame);</span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> key = cv::<span class="built_in">waitKey</span>(<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span> (key == <span class="number">27</span> || key == <span class="string">&#x27;q&#x27;</span>) &#123; <span class="comment">// Esc 或 q 退出</span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">cap.<span class="built_in">release</span>();</span><br><span class="line">cv::<span class="built_in">destroyAllWindows</span>();</span><br></pre></td></tr></table></figure>
+
+<p>关键 API：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cv::VideoCapture::<span class="built_in">VideoCapture</span>(<span class="type">int</span> index, <span class="type">int</span> apiPreference = cv::CAP_ANY);</span><br><span class="line"><span class="type">bool</span> cv::VideoCapture::<span class="built_in">open</span>(<span class="type">int</span> index, <span class="type">int</span> apiPreference = cv::CAP_ANY);</span><br><span class="line"><span class="type">bool</span> cv::VideoCapture::<span class="built_in">read</span>(cv::OutputArray image);</span><br><span class="line"><span class="type">bool</span> cv::VideoCapture::<span class="built_in">isOpened</span>() <span class="type">const</span>;</span><br><span class="line"><span class="type">void</span> cv::VideoCapture::<span class="built_in">release</span>();</span><br><span class="line"><span class="type">bool</span> cv::VideoCapture::<span class="built_in">set</span>(<span class="type">int</span> propId, <span class="type">double</span> value);</span><br><span class="line"><span class="type">double</span> cv::VideoCapture::<span class="built_in">get</span>(<span class="type">int</span> propId) <span class="type">const</span>;</span><br></pre></td></tr></table></figure>
+
+<p>例如设置采集分辨率：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cap.<span class="built_in">set</span>(cv::CAP_PROP_FRAME_WIDTH, <span class="number">1280</span>);</span><br><span class="line">cap.<span class="built_in">set</span>(cv::CAP_PROP_FRAME_HEIGHT, <span class="number">720</span>);</span><br><span class="line">cap.<span class="built_in">set</span>(cv::CAP_PROP_FPS, <span class="number">30</span>);</span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>set()</code> 返回成功不代表摄像头一定按该参数工作。应通过 <code>get()</code> 或实际帧尺寸再次确认；不同摄像头、驱动和后端支持差异很大。</p>
+<h2 id="八、工程里容易忽略的性能点"><a href="#八、工程里容易忽略的性能点" class="headerlink" title="八、工程里容易忽略的性能点"></a>八、工程里容易忽略的性能点</h2><h3 id="1-少做不必要的-clone"><a href="#1-少做不必要的-clone" class="headerlink" title="1. 少做不必要的 clone"></a>1. 少做不必要的 clone</h3><p><code>clone()</code> 会复制整张图，4K 图像的拷贝成本很高。默认优先传 <code>const cv::Mat&amp;</code>，只在算法会修改输入、跨线程持有数据或需要独立结果时深拷贝。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">process</span><span class="params">(<span class="type">const</span> cv::Mat&amp; input, cv::Mat&amp; output)</span> </span>&#123;</span><br><span class="line">    cv::<span class="built_in">cvtColor</span>(input, output, cv::COLOR_BGR2GRAY);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-复用输出-Mat"><a href="#2-复用输出-Mat" class="headerlink" title="2. 复用输出 Mat"></a>2. 复用输出 Mat</h3><p>OpenCV 大多数算子会在输出尺寸和类型一致时复用已分配内存。视频循环中把 <code>Mat</code> 定义在循环外即可，避免反复声明大容器和额外复制。</p>
+<h3 id="3-控制调试窗口和磁盘写入"><a href="#3-控制调试窗口和磁盘写入" class="headerlink" title="3. 控制调试窗口和磁盘写入"></a>3. 控制调试窗口和磁盘写入</h3><p><code>imshow</code>、<code>imwrite</code> 和大量 <code>std::cout</code> 都可能成为实时程序瓶颈。调试完成后应通过日志等级或宏关闭这些操作，而不是留在每帧循环中。</p>
+<h3 id="4-多线程前先确认数据所有权"><a href="#4-多线程前先确认数据所有权" class="headerlink" title="4. 多线程前先确认数据所有权"></a>4. 多线程前先确认数据所有权</h3><p><code>Mat</code> 的引用计数让“传递对象”很便宜，但不代表两个线程可以同时写同一块像素。跨线程队列中，明确约定只读、独占写入，或在入队时 <code>clone()</code>。</p>
+<h2 id="九、常见踩坑清单"><a href="#九、常见踩坑清单" class="headerlink" title="九、常见踩坑清单"></a>九、常见踩坑清单</h2><ol>
+<li><code>imread</code> 返回空：相对路径是相对“程序工作目录”，不是相对 <code>main.cpp</code>。打印当前目录或改用绝对路径定位。</li>
+<li>BGR&#x2F;RGB 搞反：图像整体偏蓝或偏红时，优先检查 <code>cvtColor</code>。</li>
+<li><code>Rect(x, y, width, height)</code> 把右下角坐标当成宽高：会导致 ROI 异常甚至越界。</li>
+<li>二值化前忘记灰度化：<code>threshold</code> 对多通道图的结果通常不是预期。</li>
+<li>用 JPEG 保存掩码：有损压缩会污染二值边缘，掩码和标注优先保存 PNG。</li>
+<li><code>findContours</code> 后原二值图变了：传 <code>clone()</code>。</li>
+<li>Release 能运行、Debug 不能运行：检查 OpenCV 的 Debug&#x2F;Release 库、DLL 和运行时是否匹配。</li>
+<li>程序在自己的电脑能跑，换机器打不开：部署时要带上 OpenCV DLL，或使用包管理器、安装包和依赖扫描工具整理运行时文件。</li>
+</ol>
+<h2 id="十、一个可复用的最小模板"><a href="#十、一个可复用的最小模板" class="headerlink" title="十、一个可复用的最小模板"></a>十、一个可复用的最小模板</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;opencv2/opencv.hpp&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> std::string inputPath = <span class="string">&quot;assets/input.jpg&quot;</span>;</span><br><span class="line">    cv::Mat src = cv::<span class="built_in">imread</span>(inputPath, cv::IMREAD_COLOR);</span><br><span class="line">    <span class="keyword">if</span> (src.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;读取失败: &quot;</span> &lt;&lt; inputPath &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cv::Mat gray;</span><br><span class="line">    cv::<span class="built_in">cvtColor</span>(src, gray, cv::COLOR_BGR2GRAY);</span><br><span class="line"></span><br><span class="line">    cv::Mat binary;</span><br><span class="line">    cv::<span class="built_in">threshold</span>(gray, binary, <span class="number">0</span>, <span class="number">255</span>,</span><br><span class="line">                  cv::THRESH_BINARY | cv::THRESH_OTSU);</span><br><span class="line"></span><br><span class="line">    cv::<span class="built_in">imshow</span>(<span class="string">&quot;source&quot;</span>, src);</span><br><span class="line">    cv::<span class="built_in">imshow</span>(<span class="string">&quot;binary&quot;</span>, binary);</span><br><span class="line">    cv::<span class="built_in">imwrite</span>(<span class="string">&quot;output/binary.png&quot;</span>, binary);</span><br><span class="line"></span><br><span class="line">    cv::<span class="built_in">waitKey</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>后续做项目时，把每一步中间结果都保留一个可开关的调试窗口或调试图文件。视觉算法的错误往往不在最后一步，而是从输入颜色、阈值、ROI 或坐标系开始就已经偏了。先看中间结果，比盲目调最后的参数快得多。</p>
+
+      </section>
+
+      
+      
+        <nav class="article-nav">
+          
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+    <div class="card-text">
+      
+        <a href="/2026/07/19/hexo-github-pages-setup-guide/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages</h2>
+        </a>
+      
+      <div class="card-text--row">Older</div>
+    </div>
+  </article>
+</div>
+          
+        </nav>
+      
+
+      <section class="page-message-container layout-padding">
+        
+
+
+  
+  
+
+  
+  
+
+
+      </section>
+    </div>
+    <div class="widget-info">
+      <section class="widget-author widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-body">
+    
+      <img src="https://github.com/afterTvT.png" class="soft-size--round soft-style--box" alt="afterTvT">
+    
+    
+      <h2>afterTvT</h2>
+    
+    
+      <p>记录学习、技术与生活</p>
+    
+
+    <div class="count-box">
+      <div class="count-box--item">
+        <svg class="icon icon-article" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M240.51564747 647.74217627h196.07203239c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806V165.10332731c0-33.18142087-30.16492806-60.32985613-60.32985612-60.32985611H245.04038668C225.43318342 104.7734712 210.35071939 119.85593522 210.35071939 139.46313845V617.57724821c0 16.59071043 13.57421762 30.16492806 30.16492808 30.16492806z m663.62841731-452.47392089v482.63884894c0 33.18142087-27.14843525 60.32985613-60.32985612 60.32985613H180.18579134c-33.18142087 0-60.32985613-27.14843525-60.32985612-60.32985613V195.26825538c-49.77213131 0-90.49478418 40.72265287-90.49478417 90.49478417v452.4739209c0 49.77213131 40.72265287 90.49478418 90.49478417 90.49478417h286.56681657c16.59071043 0 30.16492806 13.57421762 30.16492807 30.16492807s13.57421762 30.16492806 30.16492805 30.16492806h90.49478418c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806s13.57421762-30.16492806 30.16492807-30.16492807h286.56681657c49.77213131 0 90.49478418-40.72265287 90.49478417-90.49478417V285.76303955c0-49.77213131-40.72265287-90.49478418-90.49478417-90.49478417zM587.41232014 647.74217627h191.54729318c19.60720323 0 34.68966726-15.08246403 34.68966729-34.68966727V134.93839925c0-16.59071043-13.57421762-30.16492806-30.16492808-30.16492805H617.57724821c-30.16492806 0-60.32985613 27.14843525-60.32985612 60.32985611v452.4739209c0 16.59071043 13.57421762 30.16492806 30.16492805 30.16492806z" fill="currentColor"></path>
+</svg>
+        <span>2</span>
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+        1
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+        6
+      </div>
+    </div>
+  </div>
+</section>
+
+      
+
+      
+<section class="widet-notice widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-notice" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 945.02305225v28.15620663a24.27259221 24.27259221 0 0 1-24.27259221 24.27259335H394.0352a48.54518557 48.54518557 0 0 1-41.74885888-23.78714112l-110.68302222-184.47170332a132.04290333 132.04290333 0 0 1-17.47626667-48.54518557h118.4502511a200.97706667 200.97706667 0 0 1 76.21594113 14.56355556l20.38897777 133.49925888a48.54518557 48.54518557 0 0 0 36.40888888 27.67075555l16.01991111 2.91271112a24.27259221 24.27259221 0 0 1 20.38897778 25.72894889zM997.45185223 463.45481443a194.18074112 194.18074112 0 0 1-38.8361489 116.50844445 24.75804445 24.75804445 0 0 1-36.4088889 0l-34.95253333-34.95253333a24.27259221 24.27259221 0 0 1-2.91271111-30.58346667 97.09036999 97.09036999 0 0 0 0-106.79940665 24.27259221 24.27259221 0 0 1 2.91271111-30.58346666l34.95253333-34.95253334a24.75804445 24.75804445 0 0 1 18.93262223-7.28177777 26.2144 26.2144 0 0 1 17.47626667 9.70903665A194.18074112 194.18074112 0 0 1 997.45185223 463.45481443z m-194.18074112-388.36148111v776.72296335a48.54518557 48.54518557 0 0 1-48.54518556 48.54518443h-28.64165888a48.54518557 48.54518557 0 0 1-33.98163001-14.07810332l-145.63555556-143.20829668A291.27111111 291.27111111 0 0 0 342.57730333 657.63555556H172.18370333a145.63555556 145.63555556 0 0 1-145.63555556-145.63555556v-97.09036999a145.63555556 145.63555556 0 0 1 145.63555556-145.63555556h170.3936a291.27111111 291.27111111 0 0 0 206.31703779-85.43952668l145.63555555-143.20829554a48.54518557 48.54518557 0 0 1 33.98162888-14.07810446H754.72592555a48.54518557 48.54518557 0 0 1 48.54518556 48.54518555z" fill="currentColor"></path>
+</svg>
+    <span>NOTICE</span>
+  </div>
+  <div class="widget-body">
+    <p>flex-block主题部分重构，详情查看https://github.com/miiiku/flex-block</p>
+  </div>
+</section>
+
+
+      <section class="widget-categories widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+      <span>CATEGORIES</span>
+  </div>
+  <div class="widget-body">
+    <ul class="categories-list">
+      
+        <li class="categories-list-item">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/">
+            技术笔记 (2)
+          </a>
+        </li>
+        
+    </ul>
+  </div>
+</section>
+
+      <section class="widget-tags widget-item  layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+    <span>TAGS</span>
+  </div>
+  <div class="widget-body">
+    <div class="tags-cloud">
+      <a href="/tags/C/" style="font-size: 10px;" class="tags-cloud-0">C++</a> <a href="/tags/GitHub-Pages/" style="font-size: 10px;" class="tags-cloud-0">GitHub Pages</a> <a href="/tags/Hexo/" style="font-size: 10px;" class="tags-cloud-0">Hexo</a> <a href="/tags/OpenCV/" style="font-size: 10px;" class="tags-cloud-0">OpenCV</a> <a href="/tags/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" style="font-size: 10px;" class="tags-cloud-0">博客搭建</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/" style="font-size: 10px;" class="tags-cloud-0">计算机视觉</a>
+    </div>
+  </div>
+</section>
+    </div>
+  </article>
+</div>
+
+    <!-- footer container -->
+<footer id="footer" class="footer">
+  <div class="footer-container">
+    
+    <div class="social-icons">
+      
+        
+      
+        
+      
+        
+      
+        
+          <a href="https://github.com/afterTvT" class="soft-size--primary soft-style--box" target="_blank" rel="noopener noreferrer">
+            <svg class="icon icon-github" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64.6 512c0 195.6 125.4 361.9 300.1 422.9 23.5 5.9 19.9-10.8 19.9-22.2v-77.6c-135.8 15.9-141.3-74-150.5-89-18.5-31.5-61.9-39.5-49-54.5 31-15.9 62.5 4 98.9 58 26.4 39.1 77.9 32.5 104.1 26 5.7-23.5 17.9-44.5 34.7-60.9-140.7-25.2-199.4-111.1-199.4-213.3 0-49.5 16.4-95.1 48.4-131.8-20.4-60.6 1.9-112.4 4.9-120.1 58.2-5.2 118.5 41.6 123.3 45.3 33.1-8.9 70.8-13.7 112.9-13.7 42.4 0 80.3 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.4-43.9 2.9 7.7 24.7 58.3 5.5 118.1 32.5 36.8 49 82.8 49 132.4 0 102.3-59 188.3-200.2 213.2 23.5 23.3 38.1 55.5 38.1 91.1v112.7c0.8 9 0 17.9 15.1 17.9C832.7 877 960.4 709.4 960.4 512.1c0-247.5-200.6-447.9-447.9-447.9C265 64.1 64.6 264.5 64.6 512z"></path>
+</svg>
+          </a>
+        
+      
+        
+      
+    </div>
+     
+    <p>&copy; 2026 <a href="/" target="_blank">afterTvT</a></p>
+
+    
+
+    <p>Powered by <a href="https://hexo.io" target="_blank" rel="noopener noreferrer">Hexo</a> Theme - <a href="https://github.com/miiiku/flex-block" target="_blank" rel="noopener noreferrer author">flex-block</a></p>
+
+    <p>
+      <a href="javascript:;" id="theme-light">🌞 浅色</a>
+      <a href="javascript:;" id="theme-dark">🌛 深色</a>
+      <a href="javascript:;" id="theme-auto">🤖️ 自动</a>
+    </p>
+  </div>
+</footer>
+  </div>
+
+  <div class="back-to-top-fixed soft-size--round soft-style--box">
+    <svg class="icon icon-back-to-top" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M725.333333 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733333s42.666667-17.066667 59.733333 0l213.333333 213.333333c17.066667 17.066667 17.066667 42.666667 0 59.733333C746.666667 422.4 738.133333 426.666667 725.333333 426.666667z"></path>
+      <path d="M298.666667 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8-17.066667-17.066667-17.066667-42.666667 0-59.733333l213.333333-213.333333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733333l-213.333333 213.333333C320 422.4 311.466667 426.666667 298.666667 426.666667z"></path>
+      <path d="M512 896c-25.6 0-42.666667-17.066667-42.666667-42.666667L469.333333 170.666667c0-25.6 17.066667-42.666667 42.666667-42.666667s42.666667 17.066667 42.666667 42.666667l0 682.666667C554.666667 878.933333 537.6 896 512 896z"></path>
+    </svg>
+  </div>
+
+  
+  
+
+
+
+
+
+
+
+
+<!-- copy button  -->
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
+
+<!-- https://clipboardjs.com/ -->
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+  
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+  
+  <!-- 尾部用户自定义相关内容 -->
+</body>
+</html>
