@@ -1,0 +1,18 @@
+.content-container.article-list .article-item {
+  flex: 0 1 280px;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.content-container.article-list .card-container.article-card {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .content-container.article-list .article-item {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}
