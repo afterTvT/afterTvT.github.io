@@ -89,7 +89,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/07/19/hexo-github-pages-setup-guide/">从零搭建 Hexo 博客并部署到 GitHub Pages</a>
+      <a class="p-name article-title" href="/2026/07/19/hexo-github-pages-setup-guide/">我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages</a>
     </h1>
   
 
@@ -97,109 +97,17 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>这篇文章记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程。内容也包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。</p>
-<h2 id="一、准备环境"><a href="#一、准备环境" class="headerlink" title="一、准备环境"></a>一、准备环境</h2><p>开始前需要准备以下内容：</p>
-<ul>
-<li>一个 GitHub 账号，用于存放博客和发布网站。</li>
-<li>Node.js LTS 版本。安装后在终端执行 <code>node -v</code>、<code>npm -v</code>，能显示版本号就说明安装成功。</li>
-<li>Git。执行 <code>git --version</code> 检查是否可用。</li>
-<li>一个稳定的网络环境，能够正常访问 GitHub 和 npm。</li>
-</ul>
-<p>Windows 用户建议使用 PowerShell、CMD 或 Git Bash。若 PowerShell 执行 <code>npm</code> 时出现“禁止运行脚本”之类的提示，可以直接使用 <code>npm.cmd</code>，例如：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd install</span><br></pre></td></tr></table></figure>
-
-<p>这不影响 Hexo 本身，只是 PowerShell 的脚本执行策略拦住了 <code>npm.ps1</code>。</p>
-<h2 id="二、安装并创建-Hexo-博客"><a href="#二、安装并创建-Hexo-博客" class="headerlink" title="二、安装并创建 Hexo 博客"></a>二、安装并创建 Hexo 博客</h2><p>先安装 Hexo 命令行工具：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd install <span class="literal">-g</span> hexo<span class="literal">-cli</span></span><br></pre></td></tr></table></figure>
-
-<p>创建一个新博客并安装依赖：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo init my<span class="literal">-blog</span></span><br><span class="line"><span class="built_in">cd</span> my<span class="literal">-blog</span></span><br><span class="line">npm.cmd install</span><br></pre></td></tr></table></figure>
-
-<p>启动本地预览：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo server</span><br></pre></td></tr></table></figure>
-
-<p>浏览器打开 <code>http://localhost:4000</code>，就可以看到本地博客。按 <code>Ctrl + C</code> 可以停止预览服务。</p>
-<h2 id="三、创建-GitHub-仓库和-Pages"><a href="#三、创建-GitHub-仓库和-Pages" class="headerlink" title="三、创建 GitHub 仓库和 Pages"></a>三、创建 GitHub 仓库和 Pages</h2><p>GitHub Pages 有两种常见地址形式，仓库名称要和使用方式匹配：</p>
-<table>
-<thead>
-<tr>
-<th>类型</th>
-<th>仓库名称</th>
-<th>访问地址</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>个人主页</td>
-<td><code>你的用户名.github.io</code></td>
-<td><code>https://你的用户名.github.io/</code></td>
-</tr>
-<tr>
-<td>项目主页</td>
-<td>任意仓库名，例如 <code>blog</code></td>
-<td><code>https://你的用户名.github.io/blog/</code></td>
-</tr>
-</tbody></table>
-<p>如果要使用最简洁的个人主页地址，仓库必须叫作 <code>你的用户名.github.io</code>。例如用户名是 <code>afterTvT</code>，仓库就应是 <code>afterTvT.github.io</code>。</p>
-<p>创建仓库时建议选择公开仓库。创建完成后，在仓库的 <code>Settings</code> -&gt; <code>Pages</code> 中选择：</p>
-<ul>
-<li>Source：<code>Deploy from a branch</code></li>
-<li>Branch：<code>main</code></li>
-<li>Folder：<code>/(root)</code></li>
-</ul>
-<p>保存后，GitHub 会开始发布网站。首次发布通常需要等待几分钟。</p>
-<h2 id="四、配置-Hexo-部署"><a href="#四、配置-Hexo-部署" class="headerlink" title="四、配置 Hexo 部署"></a>四、配置 Hexo 部署</h2><p>打开博客根目录的 <code>_config.yml</code>，配置站点地址和 Git 部署信息。个人主页仓库可以参考下面的写法：</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">url:</span> <span class="string">https://你的用户名.github.io</span></span><br><span class="line"><span class="attr">root:</span> <span class="string">/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/你的用户名/你的用户名.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">main</span></span><br></pre></td></tr></table></figure>
-
-<p>还需要安装 Git 部署插件：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd install hexo<span class="literal">-deployer-git</span> <span class="literal">--save</span></span><br></pre></td></tr></table></figure>
-
-<p>配置文件中 YAML 的缩进很重要。<code>type</code>、<code>repo</code>、<code>branch</code> 前面的两个空格不能删掉，也不要用 Tab。</p>
-<h2 id="五、写文章和发布博客"><a href="#五、写文章和发布博客" class="headerlink" title="五、写文章和发布博客"></a>五、写文章和发布博客</h2><p>创建新文章：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new <span class="string">&quot;我的第一篇文章&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>文章会出现在 <code>source/_posts</code> 文件夹中。开头的内容叫 Front-matter，用来设置标题、日期、标签等信息：</p>
-<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: 我的第一篇文章</span><br><span class="line">date: 2026-07-19 12:00:00</span><br><span class="line">tags:</span><br><span class="line"><span class="section">  - Hexo</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line">这里开始写正文，支持 Markdown。</span><br></pre></td></tr></table></figure>
-
-<p>每次写完文章，按这个顺序发布：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd run build</span><br><span class="line">npm.cmd run deploy</span><br></pre></td></tr></table></figure>
-
-<p><code>build</code> 会把 Markdown 文章生成网站文件，<code>deploy</code> 会把生成结果推送到 GitHub。不要直接修改 <code>public</code> 文件夹里的 HTML，因为下次生成时它会被覆盖。</p>
-<h2 id="六、网络和-GitHub-登录问题"><a href="#六、网络和-GitHub-登录问题" class="headerlink" title="六、网络和 GitHub 登录问题"></a>六、网络和 GitHub 登录问题</h2><p>部署依赖两段网络连接：npm 下载依赖，以及 Git 推送到 GitHub。网络不稳定时，先分别检查：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd ping</span><br><span class="line">git <span class="built_in">ls</span><span class="literal">-remote</span> https://github.com/你的用户名/你的用户名.github.io.git</span><br></pre></td></tr></table></figure>
-
-<p>第二条命令能够列出远程分支，说明仓库地址和网络连接没有问题。</p>
-<p>GitHub 已不支持用账号密码进行 HTTPS 推送。如果弹出登录窗口，按提示通过浏览器完成 GitHub 授权即可。也可以改用 SSH 地址，但需要先把本机 SSH 公钥添加到 GitHub 的 <code>Settings</code> -&gt; <code>SSH and GPG keys</code>。</p>
-<h2 id="七、最容易出错的地方"><a href="#七、最容易出错的地方" class="headerlink" title="七、最容易出错的地方"></a>七、最容易出错的地方</h2><h3 id="1-把显示名当成用户名"><a href="#1-把显示名当成用户名" class="headerlink" title="1. 把显示名当成用户名"></a>1. 把显示名当成用户名</h3><p>GitHub 个人资料里的 Name 只是显示名称，不是登录用户名。仓库地址左上角显示的账号名才是真正的用户名。例如显示名可以叫 <code>after</code>，真实用户名仍可能是 <code>afterTvT</code>。部署地址必须使用真实用户名。</p>
-<h3 id="2-出现-Repository-not-found"><a href="#2-出现-Repository-not-found" class="headerlink" title="2. 出现 Repository not found"></a>2. 出现 <code>Repository not found</code></h3><p>常见原因有三个：仓库 URL 拼错、使用了显示名而非用户名、当前 Git 没有该私有仓库的权限。优先检查 <code>_config.yml</code> 中的 <code>repo</code>，然后在浏览器中打开同一个仓库地址确认它存在。</p>
-<h3 id="3-出现-rejected-fetch-first"><a href="#3-出现-rejected-fetch-first" class="headerlink" title="3. 出现 rejected (fetch first)"></a>3. 出现 <code>rejected (fetch first)</code></h3><p>这说明远程仓库已有比本地更新的提交，例如创建仓库时自动生成的 README。不要强制覆盖不确定的远程内容。先拉取并查看差异，再将本地部署记录合并或变基后推送。</p>
-<h3 id="4-页面打开后样式丢失或图片-404"><a href="#4-页面打开后样式丢失或图片-404" class="headerlink" title="4. 页面打开后样式丢失或图片 404"></a>4. 页面打开后样式丢失或图片 404</h3><p>多数是 <code>url</code> 和 <code>root</code> 写错。个人主页使用 <code>root: /</code>；项目主页需要写成 <code>root: /仓库名/</code>。修改后重新执行构建和部署。</p>
-<h3 id="5-GitHub-有提交，网站却没有更新"><a href="#5-GitHub-有提交，网站却没有更新" class="headerlink" title="5. GitHub 有提交，网站却没有更新"></a>5. GitHub 有提交，网站却没有更新</h3><p>检查仓库 <code>Settings</code> -&gt; <code>Pages</code> 是否选中了 <code>main</code> 分支和 <code>/(root)</code>。GitHub Pages 有缓存和构建时间，通常等待几分钟后再刷新页面即可。</p>
-<h2 id="八、免费更换主题"><a href="#八、免费更换主题" class="headerlink" title="八、免费更换主题"></a>八、免费更换主题</h2><p>Hexo 有很多免费的开源主题，可以在 <a target="_blank" rel="noopener" href="https://hexo.io/themes/">Hexo Themes</a> 或 GitHub 搜索 <code>hexo theme</code>。更换主题前建议先备份博客文件夹和 <code>_config.yml</code>。</p>
-<p>以某个主题仓库为例，安装方式通常是：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone 主题仓库地址 themes/主题目录名</span><br></pre></td></tr></table></figure>
-
-<p>然后在博客根目录 <code>_config.yml</code> 中修改：</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">theme:</span> <span class="string">主题目录名</span></span><br></pre></td></tr></table></figure>
-
-<p>有些主题还要求安装额外依赖，或提供单独的主题配置文件。优先阅读主题仓库 README，按它的安装说明操作。完成后先本地预览：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo clean</span><br><span class="line">hexo server</span><br></pre></td></tr></table></figure>
-
-<p>确认没有报错、样式正常后，再执行：</p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd run build</span><br><span class="line">npm.cmd run deploy</span><br></pre></td></tr></table></figure>
-
-<h2 id="九、日常使用清单"><a href="#九、日常使用清单" class="headerlink" title="九、日常使用清单"></a>九、日常使用清单</h2><p>日常写博客其实只需要记住四件事：</p>
-<ol>
-<li><code>hexo new &quot;文章标题&quot;</code> 创建文章。</li>
-<li>在 <code>source/_posts</code> 中用 Markdown 写内容。</li>
-<li><code>hexo server</code> 本地检查效果。</li>
-<li><code>npm.cmd run build</code> 和 <code>npm.cmd run deploy</code> 发布到 GitHub。</li>
-</ol>
-<p>保持文章源文件、主题配置和 GitHub 仓库地址的备份，博客就可以长期稳定地维护下去。</p>
-
+        <p>这是我的第一篇正式博客。我会记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程，也把后续写文章时常用的 Markdown 排版、图片、代码和流程图整理到一起。</p>
+<p>内容包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。</p>
+        
+          <p class="article-more-link">
+            <a href="/2026/07/19/hexo-github-pages-setup-guide/#more">Read More</a>
+          </p>
+        
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://aftertvt.github.io/2026/07/19/hexo-github-pages-setup-guide/" data-id="cuidgrVI9eyDRs0QruMsvcelJ" data-title="从零搭建 Hexo 博客并部署到 GitHub Pages" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://aftertvt.github.io/2026/07/19/hexo-github-pages-setup-guide/" data-id="cuidgrVI9eyDRs0QruMsvcelJ" data-title="我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -355,7 +263,7 @@
       <ul>
         
           <li>
-            <a href="/2026/07/19/hexo-github-pages-setup-guide/">从零搭建 Hexo 博客并部署到 GitHub Pages</a>
+            <a href="/2026/07/19/hexo-github-pages-setup-guide/">我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages</a>
           </li>
         
           <li>

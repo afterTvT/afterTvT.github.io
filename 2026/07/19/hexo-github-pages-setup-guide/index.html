@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   
   
-  <title>从零搭建 Hexo 博客并部署到 GitHub Pages | Hexo</title>
+  <title>我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="这篇文章记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程。内容也包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。 一、准备环境开始前需要准备以下内容：  一个 GitHub 账号，用于存放博客和发布网站。 Node.js LTS 版本。安装后在终端执行 node -v、npm -v，能显示版本号就说明安装成功。 Git。执行 g">
+  <meta name="description" content="这是我的第一篇正式博客。我会记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程，也把后续写文章时常用的 Markdown 排版、图片、代码和流程图整理到一起。 内容包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="从零搭建 Hexo 博客并部署到 GitHub Pages">
+<meta property="og:title" content="我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages">
 <meta property="og:url" content="https://aftertvt.github.io/2026/07/19/hexo-github-pages-setup-guide/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="这篇文章记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程。内容也包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。 一、准备环境开始前需要准备以下内容：  一个 GitHub 账号，用于存放博客和发布网站。 Node.js LTS 版本。安装后在终端执行 node -v、npm -v，能显示版本号就说明安装成功。 Git。执行 g">
+<meta property="og:description" content="这是我的第一篇正式博客。我会记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程，也把后续写文章时常用的 Markdown 排版、图片、代码和流程图整理到一起。 内容包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-18T16:30:00.000Z">
-<meta property="article:modified_time" content="2026-07-18T16:55:24.547Z">
+<meta property="article:modified_time" content="2026-07-18T17:31:02.995Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="GitHub Pages">
 <meta property="article:tag" content="Hexo">
@@ -94,7 +94,7 @@
         
   
     <h1 class="p-name article-title" itemprop="headline name">
-      从零搭建 Hexo 博客并部署到 GitHub Pages
+      我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages
     </h1>
   
 
@@ -102,7 +102,10 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>这篇文章记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程。内容也包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。</p>
+        <p>这是我的第一篇正式博客。我会记录使用 Hexo 搭建个人博客、部署到 GitHub Pages 的完整过程，也把后续写文章时常用的 Markdown 排版、图片、代码和流程图整理到一起。</p>
+<p>内容包含几个很容易踩到的坑：账号名和显示名的区别、网络连接、推送失败，以及如何免费更换主题。</p>
+<span id="more"></span>
+
 <h2 id="一、准备环境"><a href="#一、准备环境" class="headerlink" title="一、准备环境"></a>一、准备环境</h2><p>开始前需要准备以下内容：</p>
 <ul>
 <li>一个 GitHub 账号，用于存放博客和发布网站。</li>
@@ -200,11 +203,88 @@
 <li><code>npm.cmd run build</code> 和 <code>npm.cmd run deploy</code> 发布到 GitHub。</li>
 </ol>
 <p>保持文章源文件、主题配置和 GitHub 仓库地址的备份，博客就可以长期稳定地维护下去。</p>
+<h2 id="十、写一篇排版清晰的正式文章"><a href="#十、写一篇排版清晰的正式文章" class="headerlink" title="十、写一篇排版清晰的正式文章"></a>十、写一篇排版清晰的正式文章</h2><p>一篇容易阅读的博客，通常有明确的标题、开头说明、分级小标题、结论和参考链接。创建文章后，先把 Front-matter 写完整：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: 文章标题</span><br><span class="line">date: 2026-07-19 12:00:00</span><br><span class="line">categories:</span><br><span class="line"><span class="bullet">  -</span> 技术笔记</span><br><span class="line">tags:</span><br><span class="line"><span class="bullet">  -</span> Hexo</span><br><span class="line"><span class="bullet">  -</span> GitHub Pages</span><br><span class="line"><span class="section">description: 用一句话说明文章解决什么问题。</span></span><br><span class="line"><span class="section">---</span></span><br></pre></td></tr></table></figure>
+
+<p><code>categories</code> 用来给文章分类，<code>tags</code> 用来添加多个关键词。文章正文建议从二级标题 <code>##</code> 开始，一级标题已经由文章标题自动生成，不需要在正文重复写一次。</p>
+<h3 id="常用文字格式"><a href="#常用文字格式" class="headerlink" title="常用文字格式"></a>常用文字格式</h3><p>Markdown 的基础格式很简单：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">## 二级标题</span></span><br><span class="line"><span class="section">### 三级标题</span></span><br><span class="line"></span><br><span class="line"><span class="strong">**加粗文字**</span></span><br><span class="line"><span class="emphasis">*斜体文字*</span></span><br><span class="line">~~删除线~~</span><br><span class="line"></span><br><span class="line"><span class="quote">&gt; 这是一段引用，适合写结论、提醒或摘录。</span></span><br><span class="line"></span><br><span class="line">[<span class="string">这是一个链接</span>](<span class="link">https://hexo.io/</span>)</span><br></pre></td></tr></table></figure>
+
+<p>效果示例：<strong>加粗内容</strong>用于突出重点，<em>斜体内容</em>适合补充说明，引用块适合放提示信息。</p>
+<blockquote>
+<p>写博客时尽量让一个段落只表达一个意思。长内容用小标题拆开，读起来会轻松很多。</p>
+</blockquote>
+<h3 id="列表、任务清单和表格"><a href="#列表、任务清单和表格" class="headerlink" title="列表、任务清单和表格"></a>列表、任务清单和表格</h3><p>无序列表、有序列表和待办清单很适合写步骤：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> 安装 Node.js</span><br><span class="line"><span class="bullet">-</span> 安装 Git</span><br><span class="line"><span class="bullet">-</span> 创建 GitHub 仓库</span><br><span class="line"></span><br><span class="line"><span class="bullet">1.</span> 写文章</span><br><span class="line"><span class="bullet">2.</span> 本地预览</span><br><span class="line"><span class="bullet">3.</span> 部署发布</span><br><span class="line"></span><br><span class="line"><span class="bullet">-</span> [x] 完成环境安装</span><br><span class="line"><span class="bullet">-</span> [x] 完成首次部署</span><br><span class="line"><span class="bullet">-</span> [ ] 选择一个喜欢的主题</span><br></pre></td></tr></table></figure>
+
+<p>表格适合对比少量信息：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">| 命令 | 作用 |</span><br><span class="line">| --- | --- |</span><br><span class="line">| <span class="code">`hexo clean`</span> | 清理生成缓存 |</span><br><span class="line">| <span class="code">`hexo g`</span> | 生成静态网页 |</span><br><span class="line">| <span class="code">`hexo d`</span> | 部署到 GitHub |</span><br></pre></td></tr></table></figure>
+
+<p>渲染效果如下：</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>hexo clean</code></td>
+<td>清理生成缓存</td>
+</tr>
+<tr>
+<td><code>hexo g</code></td>
+<td>生成静态网页</td>
+</tr>
+<tr>
+<td><code>hexo d</code></td>
+<td>部署到 GitHub</td>
+</tr>
+</tbody></table>
+<h3 id="代码块"><a href="#代码块" class="headerlink" title="代码块"></a>代码块</h3><p>代码块必须标注语言，这样会有正确的高亮效果：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="code">```powershell</span></span><br><span class="line"><span class="code">hexo clean</span></span><br><span class="line"><span class="code">hexo g</span></span><br><span class="line"><span class="code">hexo d</span></span><br><span class="line"><span class="code">```</span></span><br></pre></td></tr></table></figure>
+
+<p>行内命令用一对反引号包住，例如 <code>hexo server</code>。不要把整段文字放进代码块，代码块只用于命令、配置和程序代码。</p>
+<h2 id="十一、在文章中插入图片"><a href="#十一、在文章中插入图片" class="headerlink" title="十一、在文章中插入图片"></a>十一、在文章中插入图片</h2><p>最简单且稳定的做法，是将图片放进博客项目的 <code>source/images</code> 文件夹。例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">source/</span><br><span class="line">  images/</span><br><span class="line">    hexo-preview.png</span><br><span class="line">    github-pages-settings.png</span><br><span class="line">  _posts/</span><br><span class="line">    我的文章.md</span><br></pre></td></tr></table></figure>
+
+<p>然后在 Markdown 文章中引用：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![<span class="string">本地预览效果</span>](<span class="link">/images/hexo-preview.png</span>)</span><br></pre></td></tr></table></figure>
+
+<p>方括号中的文字是图片加载失败时的说明，也方便读屏软件理解图片内容。图片文件名建议使用英文、小写和连字符，例如 <code>github-pages-settings.png</code>，能减少路径和编码问题。</p>
+<p>如果图片很大，先压缩再放入仓库。截图通常使用 PNG，照片通常使用 JPG 或 WebP。不要把没有必要的超大原图直接放进博客，否则页面加载会变慢。</p>
+<h2 id="十二、在文章中绘制流程图"><a href="#十二、在文章中绘制流程图" class="headerlink" title="十二、在文章中绘制流程图"></a>十二、在文章中绘制流程图</h2><p>流程图推荐使用 Mermaid。它用文字描述图形，适合和 Markdown 一起保存、修改和版本管理。</p>
+<p>先在博客根目录安装 Mermaid 过滤插件：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm.cmd install hexo<span class="literal">-filter-mermaid-diagrams</span> <span class="literal">--save</span></span><br></pre></td></tr></table></figure>
+
+<p>安装完成后，在文章中使用 <code>mermaid</code> 代码块：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">pre</span> <span class="attr">class</span>=<span class="string">&quot;mermaid&quot;</span>&gt;</span></span>flowchart TD</span><br><span class="line">  A[写 Markdown 文章] --&gt; B[hexo generate]</span><br><span class="line">  B --&gt; C[本地检查]</span><br><span class="line">  C --&gt; D[hexo deploy]</span><br><span class="line">  D --&gt; E[GitHub Pages 发布]<span class="language-xml"><span class="tag">&lt;/<span class="name">pre</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+
+<p>上面的代码表示以下发布流程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">写 Markdown 文章 -&gt; 生成静态网页 -&gt; 本地检查 -&gt; 部署 -&gt; GitHub Pages 发布</span><br></pre></td></tr></table></figure>
+
+<p>安装插件后，下面这段 Mermaid 会在网页中渲染成真正的流程图：</p>
+<pre class="mermaid">flowchart TD
+  A[写 Markdown 文章] --> B[hexo generate]
+  B --> C[本地检查]
+  C --> D[hexo deploy]
+  D --> E[GitHub Pages 发布]</pre>
+
+<p>安装插件后，重新执行 <code>hexo clean</code>、<code>hexo generate</code>，再用 <code>hexo server</code> 打开本地页面检查流程图是否显示正常。不同主题对 Mermaid 的样式支持略有区别，遇到图不显示时先确认插件已经安装在 <code>package.json</code> 中，再查看主题 README 是否有额外配置要求。</p>
+<h2 id="十三、发布前检查"><a href="#十三、发布前检查" class="headerlink" title="十三、发布前检查"></a>十三、发布前检查</h2><p>每次发布前，可以按下面的顺序快速检查：</p>
+<ol>
+<li>检查文章标题、日期、分类和标签。</li>
+<li>检查图片路径，确保本地预览时图片能显示。</li>
+<li>执行 <code>hexo server</code>，在浏览器检查排版、链接和代码块。</li>
+<li>执行 <code>hexo clean</code>、<code>hexo g</code>、<code>hexo d</code> 发布。</li>
+<li>等待 GitHub Pages 构建完成，再打开线上页面确认。</li>
+</ol>
+<p>写博客不必一开始就追求非常复杂的排版。先把问题、过程、结果和踩坑经验说清楚，持续积累几篇后，博客自然会慢慢形成自己的风格。</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://aftertvt.github.io/2026/07/19/hexo-github-pages-setup-guide/" data-id="cuidgrVI9eyDRs0QruMsvcelJ" data-title="从零搭建 Hexo 博客并部署到 GitHub Pages" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://aftertvt.github.io/2026/07/19/hexo-github-pages-setup-guide/" data-id="cuidgrVI9eyDRs0QruMsvcelJ" data-title="我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -278,7 +358,7 @@
       <ul>
         
           <li>
-            <a href="/2026/07/19/hexo-github-pages-setup-guide/">从零搭建 Hexo 博客并部署到 GitHub Pages</a>
+            <a href="/2026/07/19/hexo-github-pages-setup-guide/">我的第一篇正式博客：从零搭建 Hexo 并部署到 GitHub Pages</a>
           </li>
         
           <li>
@@ -336,5 +416,5 @@
 
 
   </div>
-</body>
+<!-- hexo injector body_end start --><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "strict" });</script><!-- hexo injector body_end end --></body>
 </html>
