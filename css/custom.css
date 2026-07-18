@@ -1,3 +1,19 @@
+html,
+body {
+  min-height: 100%;
+  background-color: var(--theme-bg-primary);
+}
+
+.root-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.root-container > .body-container {
+  flex: 1 0 auto;
+}
+
 .content-container.article-list .article-item {
   flex: 0 1 280px;
   min-width: 220px;
