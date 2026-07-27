@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><!-- hexo injector head_begin start --><script>if (!window.localStorage.getItem("theme")) { document.documentElement.classList.add("theme-light"); }</script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#3367D6"/>
+  <link rel="apple-touch-icon" href="/icons-192.png">
+  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="generator" content="Hexo 8.1.2">
+
+  
+    <meta name="description" content="记录学习、技术与生活">
+  
+
+  
+
+  
+    <meta name="author" content="afterTvT">
+  
+
+  
+
+  
+
+  <title>STM32 HAL 库常用 API 速查：配合 CubeMX 理解外设与寄存器 | afterTvT 的博客</title>
+
+  
+
+  
+    <link rel="shortcut icon" href="/images/site-logo.jpg">
+  
+
+  
+
+  
+
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+  <div class="root-container">
+    
+<!-- header container -->
+<header class="header-container post">
+  
+    <div class="post-image" style="background-image: url(/images/stm32-hal-cover.jpg)"></div>
+  
+
+  <!-- navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- logo -->
+    <div class="navbar-logo">
+      <a href="/">
+        
+          afterTvT 的博客
+        
+      </a>
+    </div>
+    <!-- link -->
+    <div class="navbar-link">
+      <div class="navbar-btn">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <ul class="navbar-list">
+        
+          <li class="navbar-list-item"><a href="/">首页</a></li>
+        
+          <li class="navbar-list-item"><a href="/archives">归档</a></li>
+        
+          <li class="navbar-list-item"><a href="/links">友链</a></li>
+        
+          <li class="navbar-list-item"><a href="/about">关于</a></li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <div class="header-content">
+      <div class="post-text layout-block">
+        <div class="layout-margin">
+          <h1 class="title-wrap">STM32 HAL 库常用 API 速查：配合 CubeMX 理解外设与寄存器</h1>
+          <h2 class="title-sub-wrap">
+            <strong>afterTvT</strong>
+            <span>发布于</span>
+            <time  class="article-date" datetime="2026-07-28T12:00:00.000Z" itemprop="datePublished">2026-07-28</time>
+          </h2>
+          
+          
+          <ul class="wrap-list dark">
+  
+    <li><a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/">📒 技术笔记</a></li>
+    
+</ul>
+          <ul class="wrap-list dark">
+  
+    <li><a href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/">🏷️ 嵌入式</a></li>
+  
+    <li><a href="/tags/STM32/">🏷️ STM32</a></li>
+  
+    <li><a href="/tags/HAL/">🏷️ HAL</a></li>
+  
+    <li><a href="/tags/CubeMX/">🏷️ CubeMX</a></li>
+  
+    <li><a href="/tags/%E5%AF%84%E5%AD%98%E5%99%A8/">🏷️ 寄存器</a></li>
+  
+</ul>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  
+  
+</header>
+
+
+    <!-- 文章 -->
+
+<!-- 文章内容 -->
+<div class="body-container">
+  <article class="content-container layout-block post-container">
+    <div class="article-info">
+      
+      
+      
+      
+      <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
+        <p>这篇笔记主要服务于两个场景：平时使用 CubeMX 配置 STM32 外设时，能够快速找到常用 HAL API；面试复习时，能够说明 HAL API 背后大致修改了哪些寄存器，以及 HAL、LL 和直接寄存器操作之间的关系。这里不追求把每个函数都罗列出来，而是优先整理高频 API、调用套路和容易出错的地方。</p>
+<p>不同 STM32 系列的 HAL 函数和寄存器可能存在差异。本文以常见 STM32 HAL 使用方式为主，具体寄存器名称要以当前芯片的参考手册和对应 HAL 源码为准。</p>
+<span id="more"></span>
+
+<h2 id="一、CubeMX-和-HAL-的关系"><a href="#一、CubeMX-和-HAL-的关系" class="headerlink" title="一、CubeMX 和 HAL 的关系"></a>一、CubeMX 和 HAL 的关系</h2><p>使用 CubeMX 时，通常不是从零手写外设初始化，而是先在 <code>.ioc</code> 工程中完成配置，再由 CubeMX 生成初始化代码。</p>
+<pre><code class="highlight mermaid">flowchart LR
+  A[CubeMX 配置时钟和外设] --&gt; B[生成 HAL 初始化代码]
+  B --&gt; C[main 中调用 MX_xxx_Init]
+  C --&gt; D[调用 HAL 阻塞/中断/DMA API]
+  D --&gt; E[回调函数处理数据]
+  E --&gt; F[业务逻辑和控制算法]</code></pre>
+
+<p>一个典型的 <code>main()</code> 结构大致是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">HAL_Init();</span><br><span class="line">SystemClock_Config();</span><br><span class="line">MX_GPIO_Init();</span><br><span class="line">MX_USART1_UART_Init();</span><br><span class="line">MX_TIM3_Init();</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 主循环业务逻辑</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>各部分职责可以这样理解：</p>
+<table>
+<thead>
+<tr>
+<th>代码</th>
+<th>主要作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HAL_Init()</code></td>
+<td>初始化 HAL、配置 SysTick、设置中断优先级分组</td>
+</tr>
+<tr>
+<td><code>SystemClock_Config()</code></td>
+<td>配置系统时钟、总线时钟和外设时钟来源</td>
+</tr>
+<tr>
+<td><code>MX_xxx_Init()</code></td>
+<td>根据 CubeMX 配置初始化具体外设</td>
+</tr>
+<tr>
+<td><code>HAL_xxx_xxx()</code></td>
+<td>运行期间启动、停止、收发或读取外设</td>
+</tr>
+<tr>
+<td><code>HAL_xxx_MspInit()</code></td>
+<td>配置 GPIO、时钟、DMA 和 NVIC 等底层资源</td>
+</tr>
+<tr>
+<td>回调函数</td>
+<td>处理异步中断或 DMA 完成事件</td>
+</tr>
+</tbody></table>
+<p>CubeMX 生成代码中的 <code>USER CODE BEGIN</code> 和 <code>USER CODE END</code> 区域可以修改。其他生成区域可能在重新生成代码时被覆盖，因此自己的变量、函数和业务代码应尽量放在用户代码区域或独立的 <code>.c/.h</code> 文件中。</p>
+<h2 id="二、HAL-API-的统一使用套路"><a href="#二、HAL-API-的统一使用套路" class="headerlink" title="二、HAL API 的统一使用套路"></a>二、HAL API 的统一使用套路</h2><p>大多数 HAL 外设都遵循相似的接口结构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">创建句柄和配置结构体</span><br><span class="line">    ↓</span><br><span class="line">HAL_xxx_Init()</span><br><span class="line">    ↓</span><br><span class="line">选择阻塞、中断或 DMA 方式</span><br><span class="line">    ↓</span><br><span class="line">必要时在 IRQHandler 中调用 HAL_xxx_IRQHandler()</span><br><span class="line">    ↓</span><br><span class="line">在回调函数中处理异步结果</span><br><span class="line">    ↓</span><br><span class="line">HAL_xxx_DeInit()</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-句柄-Handle"><a href="#1-句柄-Handle" class="headerlink" title="1. 句柄 Handle"></a>1. 句柄 Handle</h3><p>例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">UART_HandleTypeDef huart1;</span><br><span class="line">TIM_HandleTypeDef htim3;</span><br><span class="line">ADC_HandleTypeDef hadc1;</span><br></pre></td></tr></table></figure>
+
+<p>句柄不只是保存外设地址，还可能保存初始化参数、当前状态、锁、错误码和 DMA 句柄。常见状态包括：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">HAL_OK</span><br><span class="line">HAL_ERROR</span><br><span class="line">HAL_BUSY</span><br><span class="line">HAL_TIMEOUT</span><br></pre></td></tr></table></figure>
+
+<p>所以调用 HAL API 后，不能只看程序有没有崩溃，还应检查返回值和错误状态。</p>
+<h3 id="2-三种运行方式"><a href="#2-三种运行方式" class="headerlink" title="2. 三种运行方式"></a>2. 三种运行方式</h3><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>特点</th>
+<th>常见 API 后缀</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>阻塞</td>
+<td>CPU 等待操作结束</td>
+<td>无后缀</td>
+<td>调试、低速、简单流程</td>
+</tr>
+<tr>
+<td>中断</td>
+<td>硬件完成后进入回调</td>
+<td><code>_IT</code></td>
+<td>不希望 CPU 一直等待</td>
+</tr>
+<tr>
+<td>DMA</td>
+<td>DMA 自动搬运数据</td>
+<td><code>_DMA</code></td>
+<td>连续采样、批量收发、高吞吐</td>
+</tr>
+</tbody></table>
+<p>中断和 DMA 方式通常不是调用函数就结束了，而是要继续准备回调、缓冲区和中断处理函数。</p>
+<h2 id="三、GPIO-API-速查"><a href="#三、GPIO-API-速查" class="headerlink" title="三、GPIO API 速查"></a>三、GPIO API 速查</h2><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+<th>底层理解</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HAL_GPIO_Init()</code></td>
+<td>配置 GPIO 模式、速度、上下拉和复用</td>
+<td>修改模式、类型、速度、上下拉、复用寄存器</td>
+</tr>
+<tr>
+<td><code>HAL_GPIO_DeInit()</code></td>
+<td>恢复 GPIO 默认状态</td>
+<td>关闭或恢复相关配置</td>
+</tr>
+<tr>
+<td><code>HAL_GPIO_WritePin()</code></td>
+<td>输出高低电平</td>
+<td>通常操作 <code>BSRR</code></td>
+</tr>
+<tr>
+<td><code>HAL_GPIO_ReadPin()</code></td>
+<td>读取输入电平</td>
+<td>通常读取 <code>IDR</code></td>
+</tr>
+<tr>
+<td><code>HAL_GPIO_TogglePin()</code></td>
+<td>翻转输出电平</td>
+<td>通常读改写输出寄存器</td>
+</tr>
+<tr>
+<td><code>HAL_GPIO_LockPin()</code></td>
+<td>锁定 GPIO 配置</td>
+<td>设置锁定寄存器</td>
+</tr>
+</tbody></table>
+<p>CubeMX 中需要确认：GPIO 时钟、模式、输出类型、上下拉、速度、默认电平以及复用功能。GPIO 输出高低电平和 GPIO 初始化是两件事，初始化完成后还要使用 <code>WritePin()</code> 或其他输出 API 改变电平。</p>
+<h3 id="GPIO-和寄存器的联系"><a href="#GPIO-和寄存器的联系" class="headerlink" title="GPIO 和寄存器的联系"></a>GPIO 和寄存器的联系</h3><p>不同系列名称不完全相同：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">STM32F1：CRL、CRH、IDR、ODR、BSRR、BRR</span><br><span class="line">STM32F4：MODER、OTYPER、OSPEEDR、PUPDR、IDR、ODR、BSRR、AFR</span><br></pre></td></tr></table></figure>
+
+<p>例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);</span><br></pre></td></tr></table></figure>
+
+<p>通常可以理解为向 GPIO 的置位寄存器写入对应位。直接操作寄存器时，单独置位或复位优先考虑 <code>BSRR</code>，因为它适合原子地改变某一个引脚，减少读改写带来的并发问题。</p>
+<h2 id="四、RCC、时钟和-SysTick"><a href="#四、RCC、时钟和-SysTick" class="headerlink" title="四、RCC、时钟和 SysTick"></a>四、RCC、时钟和 SysTick</h2><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HAL_RCC_OscConfig()</code></td>
+<td>配置振荡器、PLL 等时钟源</td>
+</tr>
+<tr>
+<td><code>HAL_RCC_ClockConfig()</code></td>
+<td>配置系统时钟和总线分频</td>
+</tr>
+<tr>
+<td><code>HAL_RCC_GetSysClockFreq()</code></td>
+<td>获取系统时钟频率</td>
+</tr>
+<tr>
+<td><code>HAL_RCC_GetHCLKFreq()</code></td>
+<td>获取 HCLK 频率</td>
+</tr>
+<tr>
+<td><code>HAL_GetTick()</code></td>
+<td>获取 HAL 的毫秒计数</td>
+</tr>
+<tr>
+<td><code>HAL_Delay()</code></td>
+<td>基于 HAL Tick 的毫秒延时</td>
+</tr>
+</tbody></table>
+<p>时钟问题是外设异常的高频原因。UART 波特率、定时器频率、ADC 时钟和 USB 时钟都依赖时钟树。</p>
+<p>特别注意：某些 STM32 系列中，当 APB 总线预分频不为 1 时，定时器时钟可能是 APB 时钟的两倍。因此定时器频率不能只看 CubeMX 界面上的 APB 频率。</p>
+<p><code>HAL_Delay()</code> 适合简单的主循环延时，不适合放在高频中断中，也不适合代替精确的定时器调度。</p>
+<h2 id="五、UART-API-速查"><a href="#五、UART-API-速查" class="headerlink" title="五、UART API 速查"></a>五、UART API 速查</h2><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+<th>常见用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HAL_UART_Init()</code></td>
+<td>初始化 UART</td>
+<td>设置波特率、数据位、停止位、校验等</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Transmit()</code></td>
+<td>阻塞发送</td>
+<td>调试打印、低速简单发送</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Receive()</code></td>
+<td>阻塞接收</td>
+<td>接收固定长度数据</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Transmit_IT()</code></td>
+<td>中断发送</td>
+<td>非阻塞发送</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Receive_IT()</code></td>
+<td>中断接收</td>
+<td>固定长度或状态机接收</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Transmit_DMA()</code></td>
+<td>DMA 发送</td>
+<td>批量或连续发送</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Receive_DMA()</code></td>
+<td>DMA 接收</td>
+<td>连续数据流接收</td>
+</tr>
+<tr>
+<td><code>HAL_UART_IRQHandler()</code></td>
+<td>UART 中断处理</td>
+<td>在对应 IRQHandler 中调用</td>
+</tr>
+<tr>
+<td><code>HAL_UART_Abort()</code></td>
+<td>中止当前操作</td>
+<td>超时、异常恢复</td>
+</tr>
+<tr>
+<td><code>HAL_UART_DeInit()</code></td>
+<td>反初始化</td>
+<td>关闭或重新配置 UART</td>
+</tr>
+</tbody></table>
+<p>UART 初始化通常会间接完成以下工作：开启 UART 时钟、配置 GPIO 复用、设置波特率寄存器、配置控制寄存器并使能发送和接收。</p>
+<p>直接寄存器理解可以记成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">BRR：波特率</span><br><span class="line">CR1/CR2/CR3：功能和中断配置</span><br><span class="line">ISR 或 SR：状态标志</span><br><span class="line">RDR/DR：接收数据</span><br><span class="line">TDR/DR：发送数据</span><br></pre></td></tr></table></figure>
+
+<p>中断方式下，IRQHandler 通常需要调用：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">USART1_IRQHandler</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    HAL_UART_IRQHandler(&amp;huart1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接收完成后再在回调函数中处理数据，并根据需要重新启动下一次接收。</p>
+<h2 id="六、Timer、PWM、输入捕获和编码器"><a href="#六、Timer、PWM、输入捕获和编码器" class="headerlink" title="六、Timer、PWM、输入捕获和编码器"></a>六、Timer、PWM、输入捕获和编码器</h2><h3 id="常用-API"><a href="#常用-API" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HAL_TIM_Base_Start()</code></td>
+<td>启动基本计数</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_Base_Start_IT()</code></td>
+<td>启动计数并允许更新中断</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_PWM_Start()</code></td>
+<td>启动 PWM 输出</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_PWM_Stop()</code></td>
+<td>停止 PWM 输出</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_PWM_Start_IT()</code></td>
+<td>带中断启动 PWM</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_IC_Start()</code></td>
+<td>启动输入捕获</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_Encoder_Start()</code></td>
+<td>启动编码器接口</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_PeriodElapsedCallback()</code></td>
+<td>定时器更新回调</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_PWM_PulseFinishedCallback()</code></td>
+<td>PWM 脉冲完成回调</td>
+</tr>
+<tr>
+<td><code>HAL_TIM_IC_CaptureCallback()</code></td>
+<td>输入捕获回调</td>
+</tr>
+<tr>
+<td><code>__HAL_TIM_SET_COMPARE()</code></td>
+<td>修改比较值，常用于改变占空比</td>
+</tr>
+<tr>
+<td><code>__HAL_TIM_SET_AUTORELOAD()</code></td>
+<td>修改自动重装值</td>
+</tr>
+</tbody></table>
+<p>PWM 频率和占空比主要由下面几个量决定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">计数频率 = 定时器时钟 / (PSC + 1)</span><br><span class="line">PWM 周期与 ARR 有关</span><br><span class="line">占空比与 CCR 和 ARR 的比例有关</span><br></pre></td></tr></table></figure>
+
+<p>底层寄存器可以重点记：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">PSC：预分频</span><br><span class="line">ARR：自动重装值</span><br><span class="line">CNT：当前计数值</span><br><span class="line">CCR：捕获比较值</span><br><span class="line">CCER：通道输出使能和极性</span><br><span class="line">CR1：计数器控制</span><br><span class="line">DIER：中断或 DMA 请求</span><br><span class="line">SR：状态标志</span><br></pre></td></tr></table></figure>
+
+<p>面试时可以这样概括：PWM 本质是定时器计数器和比较寄存器进行比较，在一个周期内决定输出有效电平的持续时间。</p>
+<h2 id="七、ADC-API-速查"><a href="#七、ADC-API-速查" class="headerlink" title="七、ADC API 速查"></a>七、ADC API 速查</h2><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HAL_ADC_Init()</code></td>
+<td>初始化 ADC</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_ConfigChannel()</code></td>
+<td>配置规则组通道</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_Start()</code></td>
+<td>启动 ADC</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_PollForConversion()</code></td>
+<td>等待转换完成</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_GetValue()</code></td>
+<td>读取转换结果</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_Start_IT()</code></td>
+<td>中断方式启动</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_Start_DMA()</code></td>
+<td>DMA 方式采样</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_ConvCpltCallback()</code></td>
+<td>DMA 或中断转换完成回调</td>
+</tr>
+<tr>
+<td><code>HAL_ADC_Stop()</code></td>
+<td>停止转换</td>
+</tr>
+<tr>
+<td><code>HAL_ADCEx_Calibration_Start()</code></td>
+<td>ADC 校准，具体支持情况看系列</td>
+</tr>
+</tbody></table>
+<p>底层重点关注：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">控制寄存器：启动、停止、连续转换、触发源</span><br><span class="line">采样时间寄存器：决定采样窗口</span><br><span class="line">序列寄存器：决定通道转换顺序</span><br><span class="line">数据寄存器 DR：保存转换结果</span><br></pre></td></tr></table></figure>
+
+<p>ADC 结果异常时，优先检查参考电压、GPIO 模式、采样时间、通道顺序、DMA 长度和数据位宽，而不是先怀疑 <code>HAL_ADC_GetValue()</code>。</p>
+<h2 id="八、I2C、SPI-和-CAN"><a href="#八、I2C、SPI-和-CAN" class="headerlink" title="八、I2C、SPI 和 CAN"></a>八、I2C、SPI 和 CAN</h2><h3 id="I2C"><a href="#I2C" class="headerlink" title="I2C"></a>I2C</h3><p>常用 API：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">HAL_I2C_Master_Transmit()</span><br><span class="line">HAL_I2C_Master_Receive()</span><br><span class="line">HAL_I2C_Mem_Write()</span><br><span class="line">HAL_I2C_Mem_Read()</span><br><span class="line">HAL_I2C_Master_Transmit_IT()</span><br><span class="line">HAL_I2C_Master_Receive_DMA()</span><br></pre></td></tr></table></figure>
+
+<p>I2C 常见问题是设备地址格式、读写时序、ACK、总线忙和上拉电阻。很多 HAL API 使用的是左移后的 8 位地址，具体要看当前 HAL 版本和函数说明，不能只凭模块资料中的 7 位地址直接照搬。</p>
+<h3 id="SPI"><a href="#SPI" class="headerlink" title="SPI"></a>SPI</h3><p>常用 API：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">HAL_SPI_Init()</span><br><span class="line">HAL_SPI_Transmit()</span><br><span class="line">HAL_SPI_Receive()</span><br><span class="line">HAL_SPI_TransmitReceive()</span><br><span class="line">HAL_SPI_Transmit_IT()</span><br><span class="line">HAL_SPI_TransmitReceive_DMA()</span><br></pre></td></tr></table></figure>
+
+<p>SPI 调试重点是主从模式、时钟极性 CPOL、相位 CPHA、数据位宽、首位顺序、片选时序和 DMA 缓冲区。</p>
+<h3 id="CAN"><a href="#CAN" class="headerlink" title="CAN"></a>CAN</h3><p>常用 API：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HAL_CAN_Init()</span><br><span class="line">HAL_CAN_Start()</span><br><span class="line">HAL_CAN_Stop()</span><br><span class="line">HAL_CAN_AddTxMessage()</span><br><span class="line">HAL_CAN_GetRxMessage()</span><br><span class="line">HAL_CAN_ActivateNotification()</span><br><span class="line">HAL_CAN_IRQHandler()</span><br></pre></td></tr></table></figure>
+
+<p>CAN 不能只配置 MCU，还要确认收发器、电阻、波特率、过滤器和总线终端。不同系列还可能使用 FDCAN，API 和寄存器体系会明显不同。</p>
+<h2 id="九、DMA-和中断的统一理解"><a href="#九、DMA-和中断的统一理解" class="headerlink" title="九、DMA 和中断的统一理解"></a>九、DMA 和中断的统一理解</h2><p>DMA 的核心不是“让函数变快”，而是让数据在外设和内存之间自动搬运，减少 CPU 参与。</p>
+<p>常见配置参数包括：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">外设地址</span><br><span class="line">内存地址</span><br><span class="line">传输方向</span><br><span class="line">数据宽度</span><br><span class="line">内存地址是否递增</span><br><span class="line">传输数量</span><br><span class="line">普通模式或循环模式</span><br><span class="line">优先级</span><br></pre></td></tr></table></figure>
+
+<p>HAL 的中断和 DMA API 通常需要三部分配合：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CubeMX 配置 NVIC/DMA</span><br><span class="line">→ IRQHandler 调用 HAL_xxx_IRQHandler()</span><br><span class="line">→ 回调函数处理完成事件</span><br></pre></td></tr></table></figure>
+
+<p>DMA 缓冲区要保证在传输期间一直有效，不能使用函数退出后就失效的局部变量。H7 等带 Cache 的系列还需要额外处理 Cache 一致性。</p>
+<h2 id="十、HAL-API-到寄存器的理解方式"><a href="#十、HAL-API-到寄存器的理解方式" class="headerlink" title="十、HAL API 到寄存器的理解方式"></a>十、HAL API 到寄存器的理解方式</h2><p>不要把 HAL 理解成“隐藏了所有硬件细节”。更准确的说法是：HAL 把寄存器配置、状态管理、错误处理、中断和 DMA 流程封装成了统一接口。</p>
+<p>查一个 HAL API 时，建议按这个顺序：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1. 看函数声明和参数</span><br><span class="line">2. 找对应的 stm32xx_hal_xxx.c 实现</span><br><span class="line">3. 查看其中调用的宏和寄存器结构体</span><br><span class="line">4. 在 stm32xx.h 中确认寄存器成员</span><br><span class="line">5. 对照参考手册确认寄存器位的具体含义</span><br></pre></td></tr></table></figure>
+
+<p>常见寄存器结构体类似：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GPIOA-&gt;IDR;</span><br><span class="line">GPIOA-&gt;BSRR;</span><br><span class="line">TIM3-&gt;PSC;</span><br><span class="line">TIM3-&gt;ARR;</span><br><span class="line">USART1-&gt;BRR;</span><br><span class="line">ADC1-&gt;DR;</span><br></pre></td></tr></table></figure>
+
+<p>HAL API 通常还会修改句柄状态，所以直接写寄存器后，HAL 句柄不一定知道硬件已经发生了什么。混合使用时要特别注意状态机、标志位和初始化顺序。</p>
+<h2 id="十一、HAL、LL-和直接寄存器操作"><a href="#十一、HAL、LL-和直接寄存器操作" class="headerlink" title="十一、HAL、LL 和直接寄存器操作"></a>十一、HAL、LL 和直接寄存器操作</h2><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>特点</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HAL</td>
+<td>接口统一，CubeMX 集成好，易维护</td>
+<td>普通项目、快速开发</td>
+</tr>
+<tr>
+<td>LL</td>
+<td>更接近寄存器，开销较小</td>
+<td>对时序和性能更敏感的部分</td>
+</tr>
+<tr>
+<td>直接寄存器</td>
+<td>控制最直接，但移植和维护成本高</td>
+<td>学习底层、特殊时序、极限优化</td>
+</tr>
+</tbody></table>
+<p>比较好的学习路线是：先用 CubeMX 生成 HAL 工程并验证功能，再查看 HAL 源码理解寄存器，最后只在确实需要时使用 LL 或寄存器操作。工程中不建议为了“显得底层”而全部放弃 HAL。</p>
+<h2 id="十二、CubeMX-和-HAL-常见坑"><a href="#十二、CubeMX-和-HAL-常见坑" class="headerlink" title="十二、CubeMX 和 HAL 常见坑"></a>十二、CubeMX 和 HAL 常见坑</h2><ul>
+<li>重新生成代码后，非用户代码区域可能被覆盖。</li>
+<li>GPIO、DMA、UART 等外设时钟没有打开，外设自然无法工作。</li>
+<li>GPIO 复用功能错误，导致 UART、SPI 或定时器引脚没有输出。</li>
+<li>定时器时钟受 APB 分频影响，实际频率和直觉不一定相同。</li>
+<li>中断服务函数没有调用对应的 <code>HAL_xxx_IRQHandler()</code>。</li>
+<li>中断或 DMA 接收完成后，没有重新启动下一次接收。</li>
+<li>回调函数名称或参数写错，导致回调根本没有被调用。</li>
+<li>在中断回调中使用 <code>HAL_Delay()</code> 或长时间阻塞函数。</li>
+<li>DMA 缓冲区生命周期不够长，或者长度和数据宽度配置不一致。</li>
+<li>I2C 地址、上拉电阻、SPI 模式和片选时序配置错误。</li>
+<li>只检查函数返回值，不检查 <code>HAL_xxx_GetError()</code> 或外设状态。</li>
+<li>直接改寄存器后继续调用 HAL，造成软件状态和硬件状态不一致。</li>
+</ul>
+<h2 id="十三、面试时可以怎么概括"><a href="#十三、面试时可以怎么概括" class="headerlink" title="十三、面试时可以怎么概括"></a>十三、面试时可以怎么概括</h2><p>可以用下面几句话回答 HAL 和寄存器相关问题：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">HAL 是 ST 对外设寄存器、状态机、中断和 DMA 的一层封装。</span><br><span class="line">CubeMX 主要负责生成时钟、GPIO、外设和中断的初始化代码。</span><br><span class="line">HAL API 不一定对应一个寄存器，一个初始化函数可能会修改多个寄存器，</span><br><span class="line">同时维护句柄状态和错误信息。</span><br><span class="line">遇到 HAL 行为异常时，可以从 HAL 源码追到寄存器结构体，</span><br><span class="line">再结合参考手册确认具体位的含义。</span><br></pre></td></tr></table></figure>
+
+<p>GPIO、UART、定时器、ADC 等外设都可以按照“时钟、GPIO、核心寄存器、启动方式、中断&#x2F;DMA、回调”的思路分析。这个思路比死记函数名更容易迁移到不同 STM32 系列。</p>
+<h2 id="十四、最后的快速查询清单"><a href="#十四、最后的快速查询清单" class="headerlink" title="十四、最后的快速查询清单"></a>十四、最后的快速查询清单</h2><p>遇到一个新外设时，可以按以下顺序排查：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1. CubeMX 是否选对芯片和外设实例？</span><br><span class="line">2. 时钟是否开启，时钟频率是多少？</span><br><span class="line">3. GPIO 模式和复用功能是否正确？</span><br><span class="line">4. 应该使用阻塞、中断还是 DMA？</span><br><span class="line">5. 是否需要 IRQHandler 和回调函数？</span><br><span class="line">6. HAL API 返回值和错误码是什么？</span><br><span class="line">7. 底层对应哪些状态、控制和数据寄存器？</span><br><span class="line">8. 是否存在地址、时序、缓存、并发或标志位问题？</span><br></pre></td></tr></table></figure>
+
+<p>这篇笔记的定位是快速回忆和快速定位。真正开发时，函数参数以当前工程生成的 HAL 头文件为准，寄存器细节以当前芯片参考手册为准。</p>
+
+      </section>
+
+      
+      
+        <nav class="article-nav">
+          
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+      <div class="card-cover" background-image-lazy data-img="/images/pid-embedded-cover.jpg"></div>
+    
+    <div class="card-text">
+      
+        <a href="/2026/07/20/pid-embedded-single-and-cascade/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">STM32 PID 控制笔记：单环、串级多环与工程 C 代码</h2>
+        </a>
+      
+      <div class="card-text--row">Older</div>
+    </div>
+  </article>
+</div>
+          
+        </nav>
+      
+
+      <section class="page-message-container layout-padding">
+        
+
+
+  
+  
+
+  
+  
+
+
+      </section>
+    </div>
+    <div class="widget-info">
+      <section class="widget-author widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-body">
+    
+      <img src="https://github.com/afterTvT.png" class="soft-size--round soft-style--box" alt="afterTvT">
+    
+    
+      <h2>afterTvT</h2>
+    
+    
+      <p>记录学习、技术与生活</p>
+    
+
+    <div class="count-box">
+      <div class="count-box--item">
+        <svg class="icon icon-article" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M240.51564747 647.74217627h196.07203239c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806V165.10332731c0-33.18142087-30.16492806-60.32985613-60.32985612-60.32985611H245.04038668C225.43318342 104.7734712 210.35071939 119.85593522 210.35071939 139.46313845V617.57724821c0 16.59071043 13.57421762 30.16492806 30.16492808 30.16492806z m663.62841731-452.47392089v482.63884894c0 33.18142087-27.14843525 60.32985613-60.32985612 60.32985613H180.18579134c-33.18142087 0-60.32985613-27.14843525-60.32985612-60.32985613V195.26825538c-49.77213131 0-90.49478418 40.72265287-90.49478417 90.49478417v452.4739209c0 49.77213131 40.72265287 90.49478418 90.49478417 90.49478417h286.56681657c16.59071043 0 30.16492806 13.57421762 30.16492807 30.16492807s13.57421762 30.16492806 30.16492805 30.16492806h90.49478418c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806s13.57421762-30.16492806 30.16492807-30.16492807h286.56681657c49.77213131 0 90.49478418-40.72265287 90.49478417-90.49478417V285.76303955c0-49.77213131-40.72265287-90.49478418-90.49478417-90.49478417zM587.41232014 647.74217627h191.54729318c19.60720323 0 34.68966726-15.08246403 34.68966729-34.68966727V134.93839925c0-16.59071043-13.57421762-30.16492806-30.16492808-30.16492805H617.57724821c-30.16492806 0-60.32985613 27.14843525-60.32985612 60.32985611v452.4739209c0 16.59071043 13.57421762 30.16492806 30.16492805 30.16492806z" fill="currentColor"></path>
+</svg>
+        <span>5</span>
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+        1
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+        15
+      </div>
+    </div>
+  </div>
+</section>
+
+      
+
+      
+<section class="widet-notice widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-notice" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 945.02305225v28.15620663a24.27259221 24.27259221 0 0 1-24.27259221 24.27259335H394.0352a48.54518557 48.54518557 0 0 1-41.74885888-23.78714112l-110.68302222-184.47170332a132.04290333 132.04290333 0 0 1-17.47626667-48.54518557h118.4502511a200.97706667 200.97706667 0 0 1 76.21594113 14.56355556l20.38897777 133.49925888a48.54518557 48.54518557 0 0 0 36.40888888 27.67075555l16.01991111 2.91271112a24.27259221 24.27259221 0 0 1 20.38897778 25.72894889zM997.45185223 463.45481443a194.18074112 194.18074112 0 0 1-38.8361489 116.50844445 24.75804445 24.75804445 0 0 1-36.4088889 0l-34.95253333-34.95253333a24.27259221 24.27259221 0 0 1-2.91271111-30.58346667 97.09036999 97.09036999 0 0 0 0-106.79940665 24.27259221 24.27259221 0 0 1 2.91271111-30.58346666l34.95253333-34.95253334a24.75804445 24.75804445 0 0 1 18.93262223-7.28177777 26.2144 26.2144 0 0 1 17.47626667 9.70903665A194.18074112 194.18074112 0 0 1 997.45185223 463.45481443z m-194.18074112-388.36148111v776.72296335a48.54518557 48.54518557 0 0 1-48.54518556 48.54518443h-28.64165888a48.54518557 48.54518557 0 0 1-33.98163001-14.07810332l-145.63555556-143.20829668A291.27111111 291.27111111 0 0 0 342.57730333 657.63555556H172.18370333a145.63555556 145.63555556 0 0 1-145.63555556-145.63555556v-97.09036999a145.63555556 145.63555556 0 0 1 145.63555556-145.63555556h170.3936a291.27111111 291.27111111 0 0 0 206.31703779-85.43952668l145.63555555-143.20829554a48.54518557 48.54518557 0 0 1 33.98162888-14.07810446H754.72592555a48.54518557 48.54518557 0 0 1 48.54518556 48.54518555z" fill="currentColor"></path>
+</svg>
+    <span>NOTICE</span>
+  </div>
+  <div class="widget-body">
+    <p>flex-block主题部分重构，详情查看https://github.com/miiiku/flex-block</p>
+  </div>
+</section>
+
+
+      <section class="widget-categories widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+      <span>CATEGORIES</span>
+  </div>
+  <div class="widget-body">
+    <ul class="categories-list">
+      
+        <li class="categories-list-item">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/">
+            技术笔记 (5)
+          </a>
+        </li>
+        
+    </ul>
+  </div>
+</section>
+
+      <section class="widget-tags widget-item  layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+    <span>TAGS</span>
+  </div>
+  <div class="widget-body">
+    <div class="tags-cloud">
+      <a href="/tags/C/" style="font-size: 10px;" class="tags-cloud-0">C++</a> <a href="/tags/CubeMX/" style="font-size: 10px;" class="tags-cloud-0">CubeMX</a> <a href="/tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 10px;" class="tags-cloud-0">C语言</a> <a href="/tags/GitHub-Pages/" style="font-size: 10px;" class="tags-cloud-0">GitHub Pages</a> <a href="/tags/HAL/" style="font-size: 10px;" class="tags-cloud-0">HAL</a> <a href="/tags/Hexo/" style="font-size: 10px;" class="tags-cloud-0">Hexo</a> <a href="/tags/OpenCV/" style="font-size: 10px;" class="tags-cloud-0">OpenCV</a> <a href="/tags/PID/" style="font-size: 10px;" class="tags-cloud-0">PID</a> <a href="/tags/STM32/" style="font-size: 15px;" class="tags-cloud-5">STM32</a> <a href="/tags/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" style="font-size: 10px;" class="tags-cloud-0">博客搭建</a> <a href="/tags/%E5%8D%A1%E5%B0%94%E6%9B%BC%E6%BB%A4%E6%B3%A2/" style="font-size: 10px;" class="tags-cloud-0">卡尔曼滤波</a> <a href="/tags/%E5%AF%84%E5%AD%98%E5%99%A8/" style="font-size: 10px;" class="tags-cloud-0">寄存器</a> <a href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" style="font-size: 20px;" class="tags-cloud-10">嵌入式</a> <a href="/tags/%E6%8E%A7%E5%88%B6%E7%AE%97%E6%B3%95/" style="font-size: 15px;" class="tags-cloud-5">控制算法</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/" style="font-size: 10px;" class="tags-cloud-0">计算机视觉</a>
+    </div>
+  </div>
+</section>
+    </div>
+  </article>
+</div>
+
+    <!-- footer container -->
+<footer id="footer" class="footer">
+  <div class="footer-container">
+    
+    <div class="social-icons">
+      
+        
+      
+        
+      
+        
+      
+        
+          <a href="https://github.com/afterTvT" class="soft-size--primary soft-style--box" target="_blank" rel="noopener noreferrer">
+            <svg class="icon icon-github" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64.6 512c0 195.6 125.4 361.9 300.1 422.9 23.5 5.9 19.9-10.8 19.9-22.2v-77.6c-135.8 15.9-141.3-74-150.5-89-18.5-31.5-61.9-39.5-49-54.5 31-15.9 62.5 4 98.9 58 26.4 39.1 77.9 32.5 104.1 26 5.7-23.5 17.9-44.5 34.7-60.9-140.7-25.2-199.4-111.1-199.4-213.3 0-49.5 16.4-95.1 48.4-131.8-20.4-60.6 1.9-112.4 4.9-120.1 58.2-5.2 118.5 41.6 123.3 45.3 33.1-8.9 70.8-13.7 112.9-13.7 42.4 0 80.3 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.4-43.9 2.9 7.7 24.7 58.3 5.5 118.1 32.5 36.8 49 82.8 49 132.4 0 102.3-59 188.3-200.2 213.2 23.5 23.3 38.1 55.5 38.1 91.1v112.7c0.8 9 0 17.9 15.1 17.9C832.7 877 960.4 709.4 960.4 512.1c0-247.5-200.6-447.9-447.9-447.9C265 64.1 64.6 264.5 64.6 512z"></path>
+</svg>
+          </a>
+        
+      
+        
+      
+    </div>
+     
+    <p>&copy; 2026 <a href="/" target="_blank">afterTvT</a></p>
+
+    
+
+    <p>Powered by <a href="https://hexo.io" target="_blank" rel="noopener noreferrer">Hexo</a> Theme - <a href="https://github.com/miiiku/flex-block" target="_blank" rel="noopener noreferrer author">flex-block</a></p>
+
+    <p>
+      <a href="javascript:;" id="theme-light">🌞 浅色</a>
+      <a href="javascript:;" id="theme-dark">🌛 深色</a>
+      <a href="javascript:;" id="theme-auto">🤖️ 自动</a>
+    </p>
+  </div>
+</footer>
+  </div>
+
+  <div class="back-to-top-fixed soft-size--round soft-style--box">
+    <svg class="icon icon-back-to-top" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M725.333333 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733333s42.666667-17.066667 59.733333 0l213.333333 213.333333c17.066667 17.066667 17.066667 42.666667 0 59.733333C746.666667 422.4 738.133333 426.666667 725.333333 426.666667z"></path>
+      <path d="M298.666667 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8-17.066667-17.066667-17.066667-42.666667 0-59.733333l213.333333-213.333333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733333l-213.333333 213.333333C320 422.4 311.466667 426.666667 298.666667 426.666667z"></path>
+      <path d="M512 896c-25.6 0-42.666667-17.066667-42.666667-42.666667L469.333333 170.666667c0-25.6 17.066667-42.666667 42.666667-42.666667s42.666667 17.066667 42.666667 42.666667l0 682.666667C554.666667 878.933333 537.6 896 512 896z"></path>
+    </svg>
+  </div>
+
+  
+  
+
+
+
+
+
+
+
+
+<!-- copy button  -->
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
+
+<!-- https://clipboardjs.com/ -->
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+  
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+  
+  <!-- 尾部用户自定义相关内容 -->
+</body>
+</html>
