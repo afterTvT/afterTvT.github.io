@@ -529,7 +529,66 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GPIOA-&gt;IDR;</span><br><span class="line">GPIOA-&gt;BSRR;</span><br><span class="line">TIM3-&gt;PSC;</span><br><span class="line">TIM3-&gt;ARR;</span><br><span class="line">USART1-&gt;BRR;</span><br><span class="line">ADC1-&gt;DR;</span><br></pre></td></tr></table></figure>
 
 <p>HAL API 通常还会修改句柄状态，所以直接写寄存器后，HAL 句柄不一定知道硬件已经发生了什么。混合使用时要特别注意状态机、标志位和初始化顺序。</p>
-<h2 id="十一、HAL、LL-和直接寄存器操作"><a href="#十一、HAL、LL-和直接寄存器操作" class="headerlink" title="十一、HAL、LL 和直接寄存器操作"></a>十一、HAL、LL 和直接寄存器操作</h2><table>
+<h2 id="十一、STM32-常见寄存器速查表"><a href="#十一、STM32-常见寄存器速查表" class="headerlink" title="十一、STM32 常见寄存器速查表"></a>十一、STM32 常见寄存器速查表</h2><p>下面这张表用于快速建立“外设功能对应哪些寄存器”的印象。括号中的系列只是常见情况，具体名称和位定义仍要以当前芯片的参考手册为准。</p>
+<table>
+<thead>
+<tr>
+<th>外设</th>
+<th>常见寄存器</th>
+<th>主要作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RCC</td>
+<td><code>CR</code>、<code>CFGR</code>、<code>AHB/APB ENR</code>（F1&#x2F;F4&#x2F;G4&#x2F;H7）</td>
+<td>时钟源、分频和外设时钟使能</td>
+</tr>
+<tr>
+<td>GPIO</td>
+<td><code>CRL/CRH</code>（F1）；<code>MODER</code>、<code>OTYPER</code>、<code>OSPEEDR</code>、<code>PUPDR</code>、<code>IDR</code>、<code>ODR</code>、<code>BSRR</code>、<code>AFR</code>（F4&#x2F;G4&#x2F;H7）</td>
+<td>GPIO 模式、输入输出、上下拉和复用</td>
+</tr>
+<tr>
+<td>USART&#x2F;UART</td>
+<td><code>SR</code>、<code>DR</code>、<code>BRR</code>、<code>CR1/2/3</code>（F1&#x2F;F4）；<code>ISR</code>、<code>ICR</code>、<code>RDR</code>、<code>TDR</code>、<code>BRR</code>、<code>CR1/2/3</code>（G4&#x2F;H7）</td>
+<td>波特率、收发控制、状态和数据</td>
+</tr>
+<tr>
+<td>TIM</td>
+<td><code>PSC</code>、<code>ARR</code>、<code>CNT</code>、<code>CCR</code>、<code>CCER</code>、<code>CR1</code>、<code>DIER</code>、<code>SR</code>（F1&#x2F;F4&#x2F;G4&#x2F;H7）</td>
+<td>分频、计数、周期、PWM、捕获和中断</td>
+</tr>
+<tr>
+<td>ADC</td>
+<td><code>SR</code>、<code>CR1</code>、<code>CR2</code>、<code>SQRx</code>、<code>SMPRx</code>、<code>DR</code>（F1&#x2F;F4）；<code>ISR</code>、<code>IER</code>、<code>CR</code>、<code>CFGR</code>、<code>SQRx</code>、<code>SMPRx</code>、<code>DR</code>（G4&#x2F;H7）</td>
+<td>启停、触发、采样时间、转换序列和结果</td>
+</tr>
+<tr>
+<td>DMA</td>
+<td><code>CCRx</code>、<code>CNDTR</code>、<code>CPAR</code>、<code>CMAR</code>（F1）；<code>SxCR</code>、<code>SxNDTR</code>、<code>SxPAR</code>、<code>SxM0AR</code>（F4）；<code>CxCR</code>、<code>CxTR1</code>、<code>CxNDTR</code>、<code>CxPAR</code>、<code>CxM0AR</code>（G4&#x2F;H7）</td>
+<td>传输方向、数量、外设地址和内存地址</td>
+</tr>
+<tr>
+<td>I2C</td>
+<td><code>CR1</code>、<code>CR2</code>、<code>OAR1</code>、<code>DR</code>、<code>SR1</code>、<code>SR2</code>、<code>CCR</code>、<code>TRISE</code>（F1&#x2F;F4）；<code>TIMINGR</code>、<code>ISR</code>、<code>ICR</code>、<code>RXDR</code>、<code>TXDR</code>（G4&#x2F;H7）</td>
+<td>时序、地址、状态和收发数据</td>
+</tr>
+<tr>
+<td>SPI</td>
+<td><code>CR1</code>、<code>CR2</code>、<code>SR</code>、<code>DR</code>（F1&#x2F;F4）；<code>CR1</code>、<code>CR2</code>、<code>CFG1</code>、<code>CFG2</code>、<code>SR</code>、<code>IFCR</code>、<code>TXDR</code>、<code>RXDR</code>（G4&#x2F;H7）</td>
+<td>时钟模式、数据位宽、状态和收发数据</td>
+</tr>
+<tr>
+<td>NVIC</td>
+<td><code>ISER</code>、<code>ICER</code>、<code>ISPR</code>、<code>ICPR</code>、<code>IPR</code>（CMSIS&#x2F;F1&#x2F;F4&#x2F;G4&#x2F;H7）</td>
+<td>中断使能、挂起、清除和优先级</td>
+</tr>
+</tbody></table>
+<p>快速记忆时，可以把寄存器分成几类：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ENR/时钟寄存器：让外设获得时钟</span><br><span class="line">CR/CFGR：配置和控制外设</span><br><span class="line">SR/ISR：查看状态标志</span><br><span class="line">DR/RDR/TDR：读写数据</span><br><span class="line">PSC/ARR/CCR：定时器分频、周期和比较值</span><br><span class="line">DMA 地址和数量寄存器：决定数据搬运的位置和长度</span><br></pre></td></tr></table></figure>
+
+<p>寄存器速查时最容易犯的错误，是把 F1 的寄存器代码直接搬到 F4、G4 或 H7。比如 UART 的旧系列常见 <code>SR/DR</code>，较新的系列常见 <code>ISR/RDR/TDR</code>；DMA 在 F1、F4 和 G4&#x2F;H7 中的组织方式也不同。面试时可以说明“具体寄存器随系列变化，但配置思路通常是时钟、模式、控制、状态、数据和中断&#x2F;DMA”。</p>
+<h2 id="十二、HAL、LL-和直接寄存器操作"><a href="#十二、HAL、LL-和直接寄存器操作" class="headerlink" title="十二、HAL、LL 和直接寄存器操作"></a>十二、HAL、LL 和直接寄存器操作</h2><table>
 <thead>
 <tr>
 <th>方式</th>
@@ -554,7 +613,7 @@
 </tr>
 </tbody></table>
 <p>比较好的学习路线是：先用 CubeMX 生成 HAL 工程并验证功能，再查看 HAL 源码理解寄存器，最后只在确实需要时使用 LL 或寄存器操作。工程中不建议为了“显得底层”而全部放弃 HAL。</p>
-<h2 id="十二、CubeMX-和-HAL-常见坑"><a href="#十二、CubeMX-和-HAL-常见坑" class="headerlink" title="十二、CubeMX 和 HAL 常见坑"></a>十二、CubeMX 和 HAL 常见坑</h2><ul>
+<h2 id="十三、CubeMX-和-HAL-常见坑"><a href="#十三、CubeMX-和-HAL-常见坑" class="headerlink" title="十三、CubeMX 和 HAL 常见坑"></a>十三、CubeMX 和 HAL 常见坑</h2><ul>
 <li>重新生成代码后，非用户代码区域可能被覆盖。</li>
 <li>GPIO、DMA、UART 等外设时钟没有打开，外设自然无法工作。</li>
 <li>GPIO 复用功能错误，导致 UART、SPI 或定时器引脚没有输出。</li>
@@ -568,11 +627,11 @@
 <li>只检查函数返回值，不检查 <code>HAL_xxx_GetError()</code> 或外设状态。</li>
 <li>直接改寄存器后继续调用 HAL，造成软件状态和硬件状态不一致。</li>
 </ul>
-<h2 id="十三、面试时可以怎么概括"><a href="#十三、面试时可以怎么概括" class="headerlink" title="十三、面试时可以怎么概括"></a>十三、面试时可以怎么概括</h2><p>可以用下面几句话回答 HAL 和寄存器相关问题：</p>
+<h2 id="十四、面试时可以怎么概括"><a href="#十四、面试时可以怎么概括" class="headerlink" title="十四、面试时可以怎么概括"></a>十四、面试时可以怎么概括</h2><p>可以用下面几句话回答 HAL 和寄存器相关问题：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">HAL 是 ST 对外设寄存器、状态机、中断和 DMA 的一层封装。</span><br><span class="line">CubeMX 主要负责生成时钟、GPIO、外设和中断的初始化代码。</span><br><span class="line">HAL API 不一定对应一个寄存器，一个初始化函数可能会修改多个寄存器，</span><br><span class="line">同时维护句柄状态和错误信息。</span><br><span class="line">遇到 HAL 行为异常时，可以从 HAL 源码追到寄存器结构体，</span><br><span class="line">再结合参考手册确认具体位的含义。</span><br></pre></td></tr></table></figure>
 
 <p>GPIO、UART、定时器、ADC 等外设都可以按照“时钟、GPIO、核心寄存器、启动方式、中断&#x2F;DMA、回调”的思路分析。这个思路比死记函数名更容易迁移到不同 STM32 系列。</p>
-<h2 id="十四、最后的快速查询清单"><a href="#十四、最后的快速查询清单" class="headerlink" title="十四、最后的快速查询清单"></a>十四、最后的快速查询清单</h2><p>遇到一个新外设时，可以按以下顺序排查：</p>
+<h2 id="十五、最后的快速查询清单"><a href="#十五、最后的快速查询清单" class="headerlink" title="十五、最后的快速查询清单"></a>十五、最后的快速查询清单</h2><p>遇到一个新外设时，可以按以下顺序排查：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1. CubeMX 是否选对芯片和外设实例？</span><br><span class="line">2. 时钟是否开启，时钟频率是多少？</span><br><span class="line">3. GPIO 模式和复用功能是否正确？</span><br><span class="line">4. 应该使用阻塞、中断还是 DMA？</span><br><span class="line">5. 是否需要 IRQHandler 和回调函数？</span><br><span class="line">6. HAL API 返回值和错误码是什么？</span><br><span class="line">7. 底层对应哪些状态、控制和数据寄存器？</span><br><span class="line">8. 是否存在地址、时序、缓存、并发或标志位问题？</span><br></pre></td></tr></table></figure>
 
 <p>这篇笔记的定位是快速回忆和快速定位。真正开发时，函数参数以当前工程生成的 HAL 头文件为准，寄存器细节以当前芯片参考手册为准。</p>
