@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><!-- hexo injector head_begin start --><script>if (!window.localStorage.getItem("theme")) { document.documentElement.classList.add("theme-light"); }</script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#3367D6"/>
+  <link rel="apple-touch-icon" href="/icons-192.png">
+  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="generator" content="Hexo 8.1.2">
+
+  
+    <meta name="description" content="记录学习、技术与生活">
+  
+
+  
+
+  
+    <meta name="author" content="afterTvT">
+  
+
+  
+
+  
+
+  <title>FreeRTOS 复习速查：任务、队列、信号量与常用 API | afterTvT 的博客</title>
+
+  
+
+  
+    <link rel="shortcut icon" href="/images/site-logo.jpg">
+  
+
+  
+
+  
+
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+  <div class="root-container">
+    
+<!-- header container -->
+<header class="header-container post">
+  
+    <div class="post-image" style="background-image: url(/images/freertos-cover.jpg)"></div>
+  
+
+  <!-- navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- logo -->
+    <div class="navbar-logo">
+      <a href="/">
+        
+          afterTvT 的博客
+        
+      </a>
+    </div>
+    <!-- link -->
+    <div class="navbar-link">
+      <div class="navbar-btn">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <ul class="navbar-list">
+        
+          <li class="navbar-list-item"><a href="/">首页</a></li>
+        
+          <li class="navbar-list-item"><a href="/archives">归档</a></li>
+        
+          <li class="navbar-list-item"><a href="/links">友链</a></li>
+        
+          <li class="navbar-list-item"><a href="/about">关于</a></li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <div class="header-content">
+      <div class="post-text layout-block">
+        <div class="layout-margin">
+          <h1 class="title-wrap">FreeRTOS 复习速查：任务、队列、信号量与常用 API</h1>
+          <h2 class="title-sub-wrap">
+            <strong>afterTvT</strong>
+            <span>发布于</span>
+            <time  class="article-date" datetime="2026-08-03T16:59:52.391Z" itemprop="datePublished">2026-08-04</time>
+          </h2>
+          
+          
+          <ul class="wrap-list dark">
+  
+    <li><a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/">📒 技术笔记</a></li>
+    
+</ul>
+          <ul class="wrap-list dark">
+  
+    <li><a href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/">🏷️ 嵌入式</a></li>
+  
+    <li><a href="/tags/STM32/">🏷️ STM32</a></li>
+  
+    <li><a href="/tags/FreeRTOS/">🏷️ FreeRTOS</a></li>
+  
+    <li><a href="/tags/RTOS/">🏷️ RTOS</a></li>
+  
+</ul>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  
+  
+</header>
+
+
+    <!-- 文章 -->
+
+<!-- 文章内容 -->
+<div class="body-container">
+  <article class="content-container layout-block post-container">
+    <div class="article-info">
+      
+      
+      
+      
+      <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
+        <p>这篇笔记给自己复习 FreeRTOS 和快速查 API 用。重点不是完整讲操作系统原理，而是把常用功能浓缩成：它解决什么问题、常用在哪、API 怎么查、工程里容易踩什么坑。</p>
+<p>本文按 Classic FreeRTOS 的常见 API 编写，具体可用项仍取决于内核版本、移植层和 <code>FreeRTOSConfig.h</code>。查 API 时先确认三个问题：调用者是任务还是 ISR、这个对象是否允许阻塞、数据的所有权由谁负责。</p>
+<p>FreeRTOS 的核心思路可以先记成一句话：把一个复杂的 <code>while (1)</code> 拆成多个任务，再用队列、信号量、互斥锁、事件组和通知把任务之间的关系说清楚。</p>
+<span id="more"></span>
+
+<h2 id="一、FreeRTOS-最小心智模型"><a href="#一、FreeRTOS-最小心智模型" class="headerlink" title="一、FreeRTOS 最小心智模型"></a>一、FreeRTOS 最小心智模型</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>一句话理解</th>
+<th>常用在哪</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Task 任务</td>
+<td>一个独立执行的函数，通常死循环运行</td>
+<td>传感器采样、通信解析、控制算法、UI 刷新</td>
+</tr>
+<tr>
+<td>Priority 优先级</td>
+<td>数字越大越容易先运行</td>
+<td>中断后处理、控制环、通信任务分级</td>
+</tr>
+<tr>
+<td>Tick</td>
+<td>RTOS 的系统节拍</td>
+<td>延时、超时、软件定时器</td>
+</tr>
+<tr>
+<td>Scheduler 调度器</td>
+<td>决定当前哪个任务运行</td>
+<td>所有任务切换的核心</td>
+</tr>
+<tr>
+<td>Block 阻塞</td>
+<td>任务主动等待事件，CPU 让给别人</td>
+<td>等队列、等信号量、延时</td>
+</tr>
+<tr>
+<td>ISR</td>
+<td>硬件中断服务函数</td>
+<td>串口接收、DMA 完成、定时器中断</td>
+</tr>
+</tbody></table>
+<p>最常见的工程结构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">中断只做快速搬运或唤醒</span><br><span class="line">        ↓</span><br><span class="line">高优先级任务处理实时事件</span><br><span class="line">        ↓</span><br><span class="line">普通任务做协议、状态机、日志</span><br><span class="line">        ↓</span><br><span class="line">空闲任务回收资源或低功耗</span><br></pre></td></tr></table></figure>
+
+<p>不要把 FreeRTOS 理解成“用了就一定实时”。实时性来自合理的优先级、短中断、少阻塞、可预测的临界区和明确的数据流。</p>
+<p>先记住四条边界：普通 API 只在任务上下文使用；ISR 只用对应的 <code>FromISR</code> API；Mutex 只能由持有它的任务释放；通知、队列和事件组解决的是不同层次的问题，不能只看函数名相似就互换。</p>
+<h3 id="API-返回值速记"><a href="#API-返回值速记" class="headerlink" title="API 返回值速记"></a>API 返回值速记</h3><table>
+<thead>
+<tr>
+<th>返回形式</th>
+<th>典型 API</th>
+<th>重点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NULL</code> &#x2F; <code>pdPASS</code></td>
+<td><code>xTaskCreate()</code>、<code>xQueueCreate()</code></td>
+<td>创建失败要立刻处理</td>
+</tr>
+<tr>
+<td><code>pdTRUE</code> &#x2F; <code>pdFALSE</code> 或 <code>pdPASS</code> &#x2F; <code>pdFAIL</code></td>
+<td>队列、信号量、通知</td>
+<td>超时、队列满、服务队列满都可能失败</td>
+</tr>
+<tr>
+<td><code>EventBits_t</code></td>
+<td><code>xEventGroupWaitBits()</code></td>
+<td>返回实际满足的 bit，不能只看是否返回</td>
+</tr>
+<tr>
+<td><code>size_t</code></td>
+<td>Stream&#x2F;Message Buffer 收发</td>
+<td>返回实际收发的字节数，可能小于请求值</td>
+</tr>
+</tbody></table>
+<p>不要把“函数返回了”当成“操作成功了”。尤其是 ISR 发送、定时器命令和带超时的等待，都要按返回值设计丢包、重试或错误恢复策略。</p>
+<h2 id="二、任务-Task"><a href="#二、任务-Task" class="headerlink" title="二、任务 Task"></a>二、任务 Task</h2><h3 id="常用-API"><a href="#常用-API" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+<th>速记</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xTaskCreate()</code></td>
+<td>动态创建任务</td>
+<td>栈从 heap 分配</td>
+</tr>
+<tr>
+<td><code>xTaskCreateStatic()</code></td>
+<td>静态创建任务</td>
+<td>栈和 TCB 自己提供</td>
+</tr>
+<tr>
+<td><code>vTaskDelete()</code></td>
+<td>删除任务</td>
+<td>删除自己传 <code>NULL</code></td>
+</tr>
+<tr>
+<td><code>vTaskDelay()</code></td>
+<td>延时一段 tick</td>
+<td>相对延时</td>
+</tr>
+<tr>
+<td><code>vTaskDelayUntil()</code></td>
+<td>固定周期运行</td>
+<td>控制环、采样周期更常用</td>
+</tr>
+<tr>
+<td><code>uxTaskPriorityGet()</code></td>
+<td>获取任务优先级</td>
+<td>调试和状态监控</td>
+</tr>
+<tr>
+<td><code>vTaskPrioritySet()</code></td>
+<td>修改任务优先级</td>
+<td>少用，容易让系统难分析</td>
+</tr>
+<tr>
+<td><code>xTaskGetTickCount()</code></td>
+<td>获取当前 tick</td>
+<td>软计时、超时判断</td>
+</tr>
+<tr>
+<td><code>uxTaskGetStackHighWaterMark()</code></td>
+<td>查看任务栈余量</td>
+<td>排查栈是否太小</td>
+</tr>
+</tbody></table>
+<p>最小任务模板：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;FreeRTOS.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;task.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">SensorTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    (<span class="type">void</span>)argument;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        Sensor_Poll();</span><br><span class="line">        vTaskDelay(pdMS_TO_TICKS(<span class="number">10</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">App_CreateTasks</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    BaseType_t result = xTaskCreate(SensorTask,</span><br><span class="line">                                    <span class="string">&quot;sensor&quot;</span>,</span><br><span class="line">                                    <span class="number">256</span>, <span class="comment">/* 栈深度单位通常是 word，不是 byte */</span></span><br><span class="line">                                    <span class="literal">NULL</span>,</span><br><span class="line">                                    tskIDLE_PRIORITY + <span class="number">2</span>,</span><br><span class="line">                                    <span class="literal">NULL</span>);</span><br><span class="line">    configASSERT(result == pdPASS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="常用在哪"><a href="#常用在哪" class="headerlink" title="常用在哪"></a>常用在哪</h3><ul>
+<li>一个周期性动作一个任务：传感器采样、LED 状态、按键扫描。</li>
+<li>一个阻塞等待源一个任务：串口协议、CAN 接收、网络收包。</li>
+<li>一个复杂业务状态机一个任务：控制模式切换、上位机命令处理。</li>
+</ul>
+<h3 id="注意点"><a href="#注意点" class="headerlink" title="注意点"></a>注意点</h3><ul>
+<li>任务函数不要 <code>return</code>，通常写 <code>for (;;)</code>。</li>
+<li>检查 <code>xTaskCreate()</code> 的返回值；失败通常表示 heap 不够，失败后不能继续假设任务句柄有效。</li>
+<li>删除动态任务后，相关内存由 Idle 任务异步回收；不要频繁创建&#x2F;删除来实现周期工作，也不要依赖“删除后立即释放”。静态任务的缓冲区由应用自己管理。</li>
+<li><code>vTaskDelay()</code> 是相对延时，任务执行时间会叠加进周期；固定周期优先用 <code>vTaskDelayUntil()</code>。</li>
+<li><code>vTaskDelayUntil()</code> 只负责维持唤醒节拍；如果一次执行已经超过周期，它可能立即返回，不会替你补跑或恢复控制算法的实时性。</li>
+<li>栈大小的单位是 <code>StackType_t</code>，通常是 word，不是字节；数组、<code>printf</code>、递归、复杂局部变量都会吃栈，<code>uxTaskGetStackHighWaterMark()</code> 返回的余量也通常是 word。</li>
+<li>优先级不要乱堆高。高优先级任务如果不阻塞，会饿死低优先级任务。</li>
+</ul>
+<p>固定周期模板：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">ControlTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    TickType_t last_wake = xTaskGetTickCount();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        Control_Update();</span><br><span class="line">        vTaskDelayUntil(&amp;last_wake, pdMS_TO_TICKS(<span class="number">1</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、调度、延时和优先级"><a href="#三、调度、延时和优先级" class="headerlink" title="三、调度、延时和优先级"></a>三、调度、延时和优先级</h2><table>
+<thead>
+<tr>
+<th>API &#x2F; 宏</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>vTaskStartScheduler()</code></td>
+<td>启动调度器</td>
+</tr>
+<tr>
+<td><code>taskYIELD()</code></td>
+<td>当前任务主动让出 CPU</td>
+</tr>
+<tr>
+<td><code>vTaskSuspend()</code></td>
+<td>挂起任务</td>
+</tr>
+<tr>
+<td><code>vTaskResume()</code></td>
+<td>恢复任务</td>
+</tr>
+<tr>
+<td><code>pdMS_TO_TICKS(ms)</code></td>
+<td>毫秒转 tick</td>
+</tr>
+<tr>
+<td><code>portMAX_DELAY</code></td>
+<td>最大等待时间；开启挂起管理时才可表示无限等待</td>
+</tr>
+</tbody></table>
+<p>优先级可以按场景粗分：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>优先级建议</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>中断后处理</td>
+<td>较高</td>
+<td>DMA 完成后解析一帧关键数据</td>
+</tr>
+<tr>
+<td>控制或采样</td>
+<td>中高</td>
+<td>1 ms 控制任务、IMU 融合</td>
+</tr>
+<tr>
+<td>通信协议</td>
+<td>中等</td>
+<td>串口命令、CAN 报文处理</td>
+</tr>
+<tr>
+<td>日志和显示</td>
+<td>低</td>
+<td>OLED、printf、文件写入</td>
+</tr>
+<tr>
+<td>空闲后台</td>
+<td>最低</td>
+<td>清理、统计、低功耗入口</td>
+</tr>
+</tbody></table>
+<p>注意：FreeRTOS 的数值越大优先级越高，最大值受 <code>configMAX_PRIORITIES</code> 限制。</p>
+<p><code>taskYIELD()</code> 主要用于让出给同优先级的就绪任务；它不是让低优先级任务插队。<code>vTaskSuspend()</code>&#x2F;<code>vTaskResume()</code> 是强制挂起&#x2F;恢复，不适合作为可靠的事件同步，尤其不要用 <code>vTaskResume()</code> 代替 ISR 到任务的通知，因为事件可能在任务挂起前发生而被丢失。</p>
+<p><code>pdMS_TO_TICKS()</code> 的结果受 <code>TickType_t</code> 宽度和 tick 频率限制，超长毫秒数可能溢出。需要做超时判断时，优先使用 FreeRTOS 的 tick 差值或 <code>TimeOut_t</code> 机制，不要直接用有符号整数比较绝对 tick 值。</p>
+<h2 id="四、队列-Queue"><a href="#四、队列-Queue" class="headerlink" title="四、队列 Queue"></a>四、队列 Queue</h2><p>队列用于“传数据”，可以在任务之间传结构体、指针或固定长度消息。它自带阻塞等待，非常适合生产者-消费者模型。</p>
+<h3 id="常用-API-1"><a href="#常用-API-1" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xQueueCreate()</code></td>
+<td>创建队列</td>
+<td>动态创建</td>
+</tr>
+<tr>
+<td><code>xQueueCreateStatic()</code></td>
+<td>静态创建队列</td>
+<td>不想依赖 heap</td>
+</tr>
+<tr>
+<td><code>xQueueSend()</code></td>
+<td>发送到队尾</td>
+<td>普通生产者</td>
+</tr>
+<tr>
+<td><code>xQueueSendToFront()</code></td>
+<td>发送到队头</td>
+<td>紧急消息插队</td>
+</tr>
+<tr>
+<td><code>xQueueReceive()</code></td>
+<td>接收并移除消息</td>
+<td>消费者</td>
+</tr>
+<tr>
+<td><code>xQueuePeek()</code></td>
+<td>读取但不移除</td>
+<td>观察当前消息</td>
+</tr>
+<tr>
+<td><code>uxQueueMessagesWaiting()</code></td>
+<td>当前消息数</td>
+<td>调试、限流</td>
+</tr>
+<tr>
+<td><code>xQueueReset()</code></td>
+<td>清空队列</td>
+<td>状态切换、错误恢复</td>
+</tr>
+<tr>
+<td><code>xQueueSendFromISR()</code></td>
+<td>中断里发送</td>
+<td>ISR 到任务</td>
+</tr>
+</tbody></table>
+<p>例子：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> id;</span><br><span class="line">    <span class="type">uint16_t</span> value;</span><br><span class="line">&#125; SensorMsg;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> QueueHandle_t sensor_queue;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">App_Init</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    sensor_queue = xQueueCreate(<span class="number">8</span>, <span class="keyword">sizeof</span>(SensorMsg));</span><br><span class="line">    configASSERT(sensor_queue != <span class="literal">NULL</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">ProducerTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    SensorMsg msg;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        msg.id = <span class="number">1</span>;</span><br><span class="line">        msg.value = ADC_Read();</span><br><span class="line">        xQueueSend(sensor_queue, &amp;msg, pdMS_TO_TICKS(<span class="number">5</span>));</span><br><span class="line">        vTaskDelay(pdMS_TO_TICKS(<span class="number">10</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">ConsumerTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    SensorMsg msg;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="keyword">if</span> (xQueueReceive(sensor_queue, &amp;msg, portMAX_DELAY) == pdTRUE) &#123;</span><br><span class="line">            ProcessSensor(&amp;msg);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="常用在哪-1"><a href="#常用在哪-1" class="headerlink" title="常用在哪"></a>常用在哪</h3><ul>
+<li>串口接收任务把完整帧发给协议任务。</li>
+<li>采样任务把传感器数据发给控制任务。</li>
+<li>多个模块把日志消息发给低优先级打印任务。</li>
+</ul>
+<h3 id="注意点-1"><a href="#注意点-1" class="headerlink" title="注意点"></a>注意点</h3><ul>
+<li>队列复制的是固定大小数据。大结构体频繁复制会浪费时间，必要时传指针。</li>
+<li>传指针时要保证指向的数据生命周期有效，不能指向马上失效的局部变量。</li>
+<li><code>xQueueSend()</code>&#x2F;<code>xQueueReceive()</code> 的阻塞时间是等待队列状态变化的最长时间，不是整个处理流程的超时；必须检查返回值。</li>
+<li>中断里必须用 <code>FromISR</code> 版本，并在需要时请求任务切换。队列满时 ISR 发送会失败，不能把它当成可靠的无限缓存。</li>
+<li>只保留“最新值”时，可以考虑长度为 1 的队列配合 <code>xQueueOverwrite()</code>；它不是普通 FIFO，不能用来保存多条消息。</li>
+</ul>
+<p>ISR 发送模板：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">USARTx_IRQHandler</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    BaseType_t woken = pdFALSE;</span><br><span class="line">    <span class="type">uint8_t</span> byte = USART_ReadByte();</span><br><span class="line"></span><br><span class="line">    (<span class="type">void</span>)xQueueSendFromISR(rx_queue, &amp;byte, &amp;woken);</span><br><span class="line">    portYIELD_FROM_ISR(woken);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、信号量-Semaphore"><a href="#五、信号量-Semaphore" class="headerlink" title="五、信号量 Semaphore"></a>五、信号量 Semaphore</h2><p>信号量更适合“通知事件”或“资源计数”，不适合传复杂数据。</p>
+<h3 id="二值信号量"><a href="#二值信号量" class="headerlink" title="二值信号量"></a>二值信号量</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xSemaphoreCreateBinary()</code></td>
+<td>创建二值信号量</td>
+</tr>
+<tr>
+<td><code>xSemaphoreGive()</code></td>
+<td>释放 &#x2F; 通知</td>
+</tr>
+<tr>
+<td><code>xSemaphoreTake()</code></td>
+<td>获取 &#x2F; 等待</td>
+</tr>
+<tr>
+<td><code>xSemaphoreGiveFromISR()</code></td>
+<td>中断里通知</td>
+</tr>
+</tbody></table>
+<p>常用场景：DMA 完成、串口空闲中断、按键事件、外部中断唤醒任务。</p>
+<p>二值信号量只有“有&#x2F;无”状态：连续多次 <code>give</code> 不会累积成多次事件。若每一次事件都必须保留，用计数信号量、队列或带计数的任务通知。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> SemaphoreHandle_t uart_rx_done;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">HAL_UARTEx_RxEventCallback</span><span class="params">(UART_HandleTypeDef *huart, <span class="type">uint16_t</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">    BaseType_t woken = pdFALSE;</span><br><span class="line">    (<span class="type">void</span>)huart;</span><br><span class="line">    (<span class="type">void</span>)size;</span><br><span class="line"></span><br><span class="line">    xSemaphoreGiveFromISR(uart_rx_done, &amp;woken);</span><br><span class="line">    portYIELD_FROM_ISR(woken);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">UartTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="keyword">if</span> (xSemaphoreTake(uart_rx_done, portMAX_DELAY) == pdTRUE) &#123;</span><br><span class="line">            Uart_ParseFrame();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="计数信号量"><a href="#计数信号量" class="headerlink" title="计数信号量"></a>计数信号量</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xSemaphoreCreateCounting()</code></td>
+<td>创建计数信号量</td>
+</tr>
+<tr>
+<td><code>uxSemaphoreGetCount()</code></td>
+<td>查看当前计数</td>
+</tr>
+</tbody></table>
+<p>常用场景：资源池、多个相同事件累计、固定数量 buffer 管理。</p>
+<p>注意：如果事件本身带数据，用队列更清楚；如果只是“来了几次”，计数信号量合适。</p>
+<p>信号量没有资源所有权语义，也没有优先级继承；它适合同步和计数，不适合保护共享外设。</p>
+<h2 id="六、互斥锁-Mutex"><a href="#六、互斥锁-Mutex" class="headerlink" title="六、互斥锁 Mutex"></a>六、互斥锁 Mutex</h2><p>互斥锁用于保护共享资源。它和二值信号量长得像，但语义不同：Mutex 有优先级继承，更适合资源互斥。</p>
+<h3 id="常用-API-2"><a href="#常用-API-2" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xSemaphoreCreateMutex()</code></td>
+<td>创建普通互斥锁</td>
+</tr>
+<tr>
+<td><code>xSemaphoreCreateRecursiveMutex()</code></td>
+<td>创建递归互斥锁</td>
+</tr>
+<tr>
+<td><code>xSemaphoreTake()</code></td>
+<td>加锁</td>
+</tr>
+<tr>
+<td><code>xSemaphoreGive()</code></td>
+<td>解锁</td>
+</tr>
+<tr>
+<td><code>xSemaphoreTakeRecursive()</code></td>
+<td>递归加锁</td>
+</tr>
+<tr>
+<td><code>xSemaphoreGiveRecursive()</code></td>
+<td>递归解锁</td>
+</tr>
+</tbody></table>
+<p>常用场景：</p>
+<ul>
+<li>多任务共用 UART 打印。</li>
+<li>多任务访问同一个 I2C&#x2F;SPI 总线。</li>
+<li>文件系统、Flash 写入、共享状态结构体。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> SemaphoreHandle_t i2c_mutex;</span><br><span class="line"></span><br><span class="line"><span class="type">bool</span> <span class="title function_">Sensor_ReadReg</span><span class="params">(<span class="type">uint8_t</span> addr, <span class="type">uint8_t</span> reg, <span class="type">uint8_t</span> *value)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">bool</span> ok = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(<span class="number">20</span>)) == pdTRUE) &#123;</span><br><span class="line">        ok = I2C_ReadReg(addr, reg, value);</span><br><span class="line">        xSemaphoreGive(i2c_mutex);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ok;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意点：</p>
+<ul>
+<li>Mutex 不能在 ISR 中使用。</li>
+<li>谁 <code>take</code>，谁 <code>give</code>，不要跨任务释放普通互斥锁。</li>
+<li>加锁范围越短越好，不要拿着锁做长时间延时。</li>
+<li>保护共享资源用 Mutex，不要用二值信号量硬凑。</li>
+<li>递归 Mutex 只有在同一任务确实需要嵌套获取时才使用；它会掩盖调用层级混乱，且必须按获取次数逐次 <code>give</code>。</li>
+<li>优先级继承只能缓解“低优先级任务持锁、高优先级任务等待”的优先级反转，不能解决死锁、锁顺序错误或锁内长时间阻塞；锁的层级和持有时间仍要从架构上约束。</li>
+</ul>
+<h2 id="七、任务通知-Task-Notification"><a href="#七、任务通知-Task-Notification" class="headerlink" title="七、任务通知 Task Notification"></a>七、任务通知 Task Notification</h2><p>任务通知是 FreeRTOS 里非常轻量的任务唤醒&#x2F;计数&#x2F;传值机制。很多“一对一通知”可以不用信号量或队列。</p>
+<h3 id="常用-API-3"><a href="#常用-API-3" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xTaskNotifyGive()</code></td>
+<td>给任务一个通知计数</td>
+</tr>
+<tr>
+<td><code>ulTaskNotifyTake()</code></td>
+<td>等待并消耗通知计数</td>
+</tr>
+<tr>
+<td><code>xTaskNotify()</code></td>
+<td>带动作地设置通知值</td>
+</tr>
+<tr>
+<td><code>xTaskNotifyWait()</code></td>
+<td>等待通知值</td>
+</tr>
+<tr>
+<td><code>xTaskNotifyFromISR()</code></td>
+<td>ISR 中通知</td>
+</tr>
+<tr>
+<td><code>vTaskNotifyGiveFromISR()</code></td>
+<td>ISR 中给通知计数</td>
+</tr>
+</tbody></table>
+<p>常用场景：</p>
+<ul>
+<li>DMA 完成后唤醒唯一处理任务。</li>
+<li>定时器中断唤醒控制任务。</li>
+<li>一个任务给另一个任务传一个 32 位标志或数值。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> TaskHandle_t control_task_handle;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">TIMx_IRQHandler</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    BaseType_t woken = pdFALSE;</span><br><span class="line"></span><br><span class="line">    vTaskNotifyGiveFromISR(control_task_handle, &amp;woken);</span><br><span class="line">    portYIELD_FROM_ISR(woken);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">ControlTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    control_task_handle = xTaskGetCurrentTaskHandle();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);</span><br><span class="line">        Control_Update();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ulTaskNotifyTake(pdTRUE, ...)</code> 会在成功唤醒后清零通知计数；传 <code>pdFALSE</code> 则通常只消费一个计数。<code>xTaskNotifyWait()</code> 还要分别理解 <code>ulBitsToClearOnEntry</code> 和 <code>ulBitsToClearOnExit</code>，否则很容易出现重复处理或丢 bit。</p>
+<p>任务通知通常是一对一的，每个任务默认有 notification index 0；需要多个独立通知槽时要打开通知数组配置并使用 <code>...Indexed()</code> API。创建任务后再把句柄交给 ISR，并在此之前启用中断，否则 ISR 可能使用空句柄。多个生产者、多条不同消息、复杂数据流，队列或事件组会更清楚。</p>
+<h2 id="八、事件组-Event-Group"><a href="#八、事件组-Event-Group" class="headerlink" title="八、事件组 Event Group"></a>八、事件组 Event Group</h2><p>事件组适合多个 bit 表示多个事件，任务可以等其中一个 bit 或一组 bit。</p>
+<h3 id="常用-API-4"><a href="#常用-API-4" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xEventGroupCreate()</code></td>
+<td>创建事件组</td>
+</tr>
+<tr>
+<td><code>xEventGroupSetBits()</code></td>
+<td>设置事件位</td>
+</tr>
+<tr>
+<td><code>xEventGroupClearBits()</code></td>
+<td>清除事件位</td>
+</tr>
+<tr>
+<td><code>xEventGroupWaitBits()</code></td>
+<td>等待事件位</td>
+</tr>
+<tr>
+<td><code>xEventGroupGetBits()</code></td>
+<td>获取当前事件位</td>
+</tr>
+<tr>
+<td><code>xEventGroupSetBitsFromISR()</code></td>
+<td>ISR 中设置事件位</td>
+</tr>
+</tbody></table>
+<p>常用场景：</p>
+<ul>
+<li>等待系统初始化完成：IMU、Flash、通信都 ready。</li>
+<li>通信状态标志：连接、认证、收到配置、允许上报。</li>
+<li>一个任务同时等待多个事件源。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> EVT_IMU_READY   (1U &lt;&lt; 0)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> EVT_CAN_READY   (1U &lt;&lt; 1)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> EVT_CFG_READY   (1U &lt;&lt; 2)</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> EventGroupHandle_t app_events;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">MainTask</span><span class="params">(<span class="type">void</span> *argument)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">const</span> EventBits_t all_ready = EVT_IMU_READY | EVT_CAN_READY | EVT_CFG_READY;</span><br><span class="line"></span><br><span class="line">    EventBits_t bits = xEventGroupWaitBits(app_events,</span><br><span class="line">                                           all_ready,</span><br><span class="line">                                           pdFALSE, <span class="comment">/* 不自动清除 */</span></span><br><span class="line">                                           pdTRUE,  <span class="comment">/* 等全部 bit */</span></span><br><span class="line">                                           portMAX_DELAY);</span><br><span class="line">    configASSERT((bits &amp; all_ready) == all_ready);</span><br><span class="line"></span><br><span class="line">    App_Run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意：事件组只表达“状态&#x2F;事件位”，不携带详细数据。需要数据就配合队列。</p>
+<p><code>xEventGroupWaitBits()</code> 要同时看 <code>xClearOnExit</code>、<code>xWaitForAllBits</code> 和返回值；超时返回时可能只拿到部分 bit。事件组的可用 bit 数还受端口和内核控制位占用影响，不要默认所有 32 位都能给应用使用。</p>
+<p><code>xEventGroupSetBitsFromISR()</code> 不是在 ISR 里直接完成置位，而是把操作发送给 timer&#x2F;daemon task；服务队列满时可能失败。因此它适合低频状态通知，不适合要求 ISR 立即完成的路径，快速唤醒通常优先用任务通知或二值信号量。</p>
+<h2 id="九、软件定时器-Timer"><a href="#九、软件定时器-Timer" class="headerlink" title="九、软件定时器 Timer"></a>九、软件定时器 Timer</h2><p>软件定时器由 FreeRTOS 的 timer task 回调执行，不是硬件定时器中断。</p>
+<h3 id="常用-API-5"><a href="#常用-API-5" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xTimerCreate()</code></td>
+<td>创建软件定时器</td>
+</tr>
+<tr>
+<td><code>xTimerStart()</code></td>
+<td>启动</td>
+</tr>
+<tr>
+<td><code>xTimerStop()</code></td>
+<td>停止</td>
+</tr>
+<tr>
+<td><code>xTimerReset()</code></td>
+<td>重置计时</td>
+</tr>
+<tr>
+<td><code>xTimerChangePeriod()</code></td>
+<td>修改周期</td>
+</tr>
+<tr>
+<td><code>xTimerStartFromISR()</code></td>
+<td>ISR 中启动</td>
+</tr>
+</tbody></table>
+<p>常用场景：</p>
+<ul>
+<li>按键消抖超时。</li>
+<li>通信心跳、连接超时。</li>
+<li>低频状态灯闪烁。</li>
+<li>不要求硬实时的周期动作。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> TimerHandle_t heartbeat_timer;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">HeartbeatTimerCallback</span><span class="params">(TimerHandle_t timer)</span></span><br><span class="line">&#123;</span><br><span class="line">    (<span class="type">void</span>)timer;</span><br><span class="line">    Led_Toggle();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">App_TimerInit</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    heartbeat_timer = xTimerCreate(<span class="string">&quot;heartbeat&quot;</span>,</span><br><span class="line">                                   pdMS_TO_TICKS(<span class="number">500</span>),</span><br><span class="line">                                   pdTRUE,</span><br><span class="line">                                   <span class="literal">NULL</span>,</span><br><span class="line">                                   HeartbeatTimerCallback);</span><br><span class="line">    configASSERT(heartbeat_timer != <span class="literal">NULL</span>);</span><br><span class="line">    configASSERT(xTimerStart(heartbeat_timer, <span class="number">0</span>) == pdPASS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意：定时器回调运行在 timer task 里，不要在回调里长时间阻塞，否则会影响其他软件定时器。</p>
+<p>回调中不要调用可能阻塞的 API，也不要做长时间计算；需要复杂处理时只发送通知&#x2F;队列消息，让专用任务完成。<code>xTimerStart()</code>、<code>xTimerStartFromISR()</code> 等操作通过 timer command queue 排队，调用者应检查返回值，并合理配置 <code>configTIMER_QUEUE_LENGTH</code>、<code>configTIMER_TASK_PRIORITY</code> 和 timer task 栈大小。</p>
+<h2 id="十、Stream-Buffer-和-Message-Buffer"><a href="#十、Stream-Buffer-和-Message-Buffer" class="headerlink" title="十、Stream Buffer 和 Message Buffer"></a>十、Stream Buffer 和 Message Buffer</h2><p>这两个常用于字节流和变长消息，比队列更适合串口、网络这类数据流。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>适合数据</th>
+<th>常用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Stream Buffer</td>
+<td>连续字节流</td>
+<td>UART RX、日志流、网络流</td>
+</tr>
+<tr>
+<td>Message Buffer</td>
+<td>一条条变长消息</td>
+<td>协议包、命令帧</td>
+</tr>
+</tbody></table>
+<p>常用 API：</p>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xStreamBufferCreate()</code></td>
+<td>创建 stream buffer</td>
+</tr>
+<tr>
+<td><code>xStreamBufferSend()</code></td>
+<td>写入字节流</td>
+</tr>
+<tr>
+<td><code>xStreamBufferReceive()</code></td>
+<td>读取字节流</td>
+</tr>
+<tr>
+<td><code>xStreamBufferSendFromISR()</code></td>
+<td>ISR 中写入</td>
+</tr>
+<tr>
+<td><code>xMessageBufferCreate()</code></td>
+<td>创建 message buffer</td>
+</tr>
+<tr>
+<td><code>xMessageBufferSend()</code></td>
+<td>写入一条消息</td>
+</tr>
+<tr>
+<td><code>xMessageBufferReceive()</code></td>
+<td>读取一条消息</td>
+</tr>
+</tbody></table>
+<p>注意：典型用法是一写一读。多写多读要额外加锁或重新设计数据流。</p>
+<p>Stream Buffer 不保留消息边界，<code>xStreamBufferReceive()</code> 可能只返回半帧；“收到几个字节就唤醒”也不等于收到了一个完整协议包。Message Buffer 会保留消息边界，但消息长度还受缓冲区容量限制；ISR 发送同样必须检查实际写入&#x2F;发送的字节数或结果。</p>
+<h2 id="十一、内存管理和-Heap"><a href="#十一、内存管理和-Heap" class="headerlink" title="十一、内存管理和 Heap"></a>十一、内存管理和 Heap</h2><p>FreeRTOS 常见动态对象包括任务、队列、信号量、定时器。它们通常从 FreeRTOS heap 里分配，不一定等同于 C 标准库 <code>malloc()</code>。</p>
+<h3 id="常用-API-6"><a href="#常用-API-6" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API &#x2F; Hook</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>pvPortMalloc()</code></td>
+<td>FreeRTOS 分配内存</td>
+</tr>
+<tr>
+<td><code>vPortFree()</code></td>
+<td>FreeRTOS 释放内存</td>
+</tr>
+<tr>
+<td><code>xPortGetFreeHeapSize()</code></td>
+<td>当前剩余 heap</td>
+</tr>
+<tr>
+<td><code>xPortGetMinimumEverFreeHeapSize()</code></td>
+<td>历史最低剩余 heap</td>
+</tr>
+<tr>
+<td><code>vApplicationMallocFailedHook()</code></td>
+<td>分配失败钩子</td>
+</tr>
+</tbody></table>
+<p>常见 heap 实现：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>heap_1.c</code></td>
+<td>只分配不释放</td>
+</tr>
+<tr>
+<td><code>heap_2.c</code></td>
+<td>可释放但不合并碎片</td>
+</tr>
+<tr>
+<td><code>heap_3.c</code></td>
+<td>包装标准库 <code>malloc/free</code></td>
+</tr>
+<tr>
+<td><code>heap_4.c</code></td>
+<td>可释放并合并相邻空闲块，常用</td>
+</tr>
+<tr>
+<td><code>heap_5.c</code></td>
+<td>支持多个非连续内存区</td>
+</tr>
+</tbody></table>
+<p>注意点：</p>
+<ul>
+<li>嵌入式项目里尽量在初始化阶段创建对象，运行中少动态创建删除。</li>
+<li>打开 <code>configUSE_MALLOC_FAILED_HOOK</code>，分配失败要能停住并定位。</li>
+<li><code>xPortGetFreeHeapSize()</code> 只统计 FreeRTOS heap；如果工程还调用 C 库 <code>malloc()</code>，两者的余量不是同一个指标。</li>
+<li><code>configSUPPORT_DYNAMIC_ALLOCATION</code> 和 <code>configSUPPORT_STATIC_ALLOCATION</code> 决定哪些创建 API 可用；静态对象不会从 FreeRTOS heap 扣除，但其 TCB&#x2F;栈缓冲区必须长期有效且满足对齐要求。</li>
+<li>栈溢出和 heap 不够是 FreeRTOS 初学阶段最高频问题。</li>
+</ul>
+<h2 id="十二、临界区和中断安全"><a href="#十二、临界区和中断安全" class="headerlink" title="十二、临界区和中断安全"></a>十二、临界区和中断安全</h2><h3 id="常用-API-7"><a href="#常用-API-7" class="headerlink" title="常用 API"></a>常用 API</h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>taskENTER_CRITICAL()</code></td>
+<td>进入任务级临界区</td>
+</tr>
+<tr>
+<td><code>taskEXIT_CRITICAL()</code></td>
+<td>退出任务级临界区</td>
+</tr>
+<tr>
+<td><code>taskENTER_CRITICAL_FROM_ISR()</code></td>
+<td>ISR 中进入临界区</td>
+</tr>
+<tr>
+<td><code>taskEXIT_CRITICAL_FROM_ISR()</code></td>
+<td>ISR 中退出临界区</td>
+</tr>
+<tr>
+<td><code>vTaskSuspendAll()</code></td>
+<td>暂停调度器</td>
+</tr>
+<tr>
+<td><code>xTaskResumeAll()</code></td>
+<td>恢复调度器</td>
+</tr>
+</tbody></table>
+<p>常用场景：</p>
+<ul>
+<li>保护很短的共享变量读改写。</li>
+<li>修改链表、状态位、硬件寄存器组合配置。</li>
+<li>防止任务切换造成中间状态被读取。</li>
+</ul>
+<p>注意点：</p>
+<ul>
+<li>临界区越短越好，里面不要调用可能阻塞的 API。</li>
+<li>暂停调度器不等于关中断，中断仍然会来。</li>
+<li>ISR 中只能调用带 <code>FromISR</code> 的 FreeRTOS API。</li>
+<li>临界区不是通用锁；它会影响中断响应。跨任务共享资源仍应使用 Mutex，原子变量或短临界区只解决很小的读改写。</li>
+</ul>
+<h2 id="十三、FreeRTOSConfig-h-必查项"><a href="#十三、FreeRTOSConfig-h-必查项" class="headerlink" title="十三、FreeRTOSConfig.h 必查项"></a>十三、FreeRTOSConfig.h 必查项</h2><table>
+<thead>
+<tr>
+<th>配置</th>
+<th>作用</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>configCPU_CLOCK_HZ</code></td>
+<td>CPU 时钟</td>
+<td>和系统时钟一致</td>
+</tr>
+<tr>
+<td><code>configTICK_RATE_HZ</code></td>
+<td>tick 频率</td>
+<td>常见 1000 Hz 或 100 Hz</td>
+</tr>
+<tr>
+<td><code>configMAX_PRIORITIES</code></td>
+<td>最大优先级数量</td>
+<td>别开太少，也别滥用</td>
+</tr>
+<tr>
+<td><code>configMINIMAL_STACK_SIZE</code></td>
+<td>最小任务栈</td>
+<td>单位注意是 word</td>
+</tr>
+<tr>
+<td><code>configTOTAL_HEAP_SIZE</code></td>
+<td>FreeRTOS heap 大小</td>
+<td>根据任务和队列估算</td>
+</tr>
+<tr>
+<td><code>configUSE_PREEMPTION</code></td>
+<td>是否抢占式调度</td>
+<td>常用 <code>1</code></td>
+</tr>
+<tr>
+<td><code>configUSE_TIME_SLICING</code></td>
+<td>同优先级时间片</td>
+<td>多数项目可开</td>
+</tr>
+<tr>
+<td><code>configUSE_MUTEXES</code></td>
+<td>启用互斥锁</td>
+<td>用 Mutex 必开</td>
+</tr>
+<tr>
+<td><code>configUSE_TIMERS</code></td>
+<td>启用软件定时器</td>
+<td>用 Timer 必开</td>
+</tr>
+<tr>
+<td><code>configTIMER_TASK_PRIORITY</code></td>
+<td>timer task 优先级</td>
+<td>要能及时处理 timer command</td>
+</tr>
+<tr>
+<td><code>configTIMER_QUEUE_LENGTH</code></td>
+<td>timer command queue 长度</td>
+<td>根据 ISR&#x2F;任务提交频率估算</td>
+</tr>
+<tr>
+<td><code>configTIMER_TASK_STACK_DEPTH</code></td>
+<td>timer task 栈深度</td>
+<td>回调复杂时适当增大</td>
+</tr>
+<tr>
+<td><code>configCHECK_FOR_STACK_OVERFLOW</code></td>
+<td>栈溢出检测</td>
+<td>调试期建议 <code>2</code>，具体能力取决于 port</td>
+</tr>
+<tr>
+<td><code>configUSE_MALLOC_FAILED_HOOK</code></td>
+<td>分配失败 hook</td>
+<td>建议开</td>
+</tr>
+<tr>
+<td><code>configUSE_TRACE_FACILITY</code></td>
+<td>任务统计&#x2F;调试信息</td>
+<td>使用任务列表时打开</td>
+</tr>
+<tr>
+<td><code>configASSERT()</code></td>
+<td>断言</td>
+<td>必须定义成能停住</td>
+</tr>
+</tbody></table>
+<p>中断相关还必须查 <code>configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY</code>（CMSIS 优先级表示）或 <code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code>（移位后的端口表示）。以 CMSIS 的优先级数值为例，只有数值大于等于 <code>configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY</code> 的 ISR 才能调用 <code>FromISR</code> API；数值更小代表硬件抢占优先级更高，不能调用。这个规则最容易配反。启用 <code>configASSERT()</code> 后，FreeRTOS 的中断优先级校验能尽早暴露这类错误。</p>
+<p>调试期建议保留：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> configCHECK_FOR_STACK_OVERFLOW  2</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> configUSE_MALLOC_FAILED_HOOK    1</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> configASSERT(x) do &#123; \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((x) == 0) &#123; \</span></span><br><span class="line"><span class="meta">        taskDISABLE_INTERRUPTS(); \</span></span><br><span class="line"><span class="meta">        for (;;) &#123;&#125; \</span></span><br><span class="line"><span class="meta">    &#125; \</span></span><br><span class="line"><span class="meta">&#125; while (0)</span></span><br></pre></td></tr></table></figure>
+
+<p>钩子函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">vApplicationStackOverflowHook</span><span class="params">(TaskHandle_t task, <span class="type">char</span> *name)</span></span><br><span class="line">&#123;</span><br><span class="line">    (<span class="type">void</span>)task;</span><br><span class="line">    (<span class="type">void</span>)name;</span><br><span class="line">    configASSERT(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">vApplicationMallocFailedHook</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    configASSERT(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="十四、ISR-里能不能调用这个-API"><a href="#十四、ISR-里能不能调用这个-API" class="headerlink" title="十四、ISR 里能不能调用这个 API"></a>十四、ISR 里能不能调用这个 API</h2><p>快速判断规则：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">任务里：用普通 API</span><br><span class="line">中断里：只用 xxxFromISR API</span><br><span class="line">中断退出前：根据 woken 决定是否 portYIELD_FROM_ISR()</span><br></pre></td></tr></table></figure>
+
+<p>常见 FromISR：</p>
+<table>
+<thead>
+<tr>
+<th>FromISR API</th>
+<th>对应功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>xQueueSendFromISR()</code></td>
+<td>中断发送队列消息</td>
+</tr>
+<tr>
+<td><code>xQueueReceiveFromISR()</code></td>
+<td>中断接收队列消息</td>
+</tr>
+<tr>
+<td><code>xSemaphoreGiveFromISR()</code></td>
+<td>中断释放信号量</td>
+</tr>
+<tr>
+<td><code>xTaskNotifyFromISR()</code></td>
+<td>中断通知任务</td>
+</tr>
+<tr>
+<td><code>vTaskNotifyGiveFromISR()</code></td>
+<td>中断给通知计数</td>
+</tr>
+<tr>
+<td><code>xEventGroupSetBitsFromISR()</code></td>
+<td>中断设置事件位</td>
+</tr>
+<tr>
+<td><code>xTimerStartFromISR()</code></td>
+<td>中断启动软件定时器</td>
+</tr>
+</tbody></table>
+<p>模板：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BaseType_t woken = pdFALSE;</span><br><span class="line"></span><br><span class="line">xSemaphoreGiveFromISR(done_sem, &amp;woken);</span><br><span class="line">portYIELD_FROM_ISR(woken);</span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>portYIELD_FROM_ISR()</code> 的名字在不同移植层可能略有差异，以当前工程 port 为准。</p>
+<p><code>xEventGroupSetBitsFromISR()</code> 和 <code>xTimerStartFromISR()</code> 还依赖 timer&#x2F;daemon task 的命令队列，返回失败时不能假设操作已经完成。Cortex-M 工程尤其要确认 NVIC 优先级分组、实际抢占优先级，以及 ISR 是否落在可调用 FreeRTOS API 的范围内。</p>
+<h2 id="十五、常见功能怎么选"><a href="#十五、常见功能怎么选" class="headerlink" title="十五、常见功能怎么选"></a>十五、常见功能怎么选</h2><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>优先选择</th>
+<th>不建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一个任务给另一个任务发结构体</td>
+<td>Queue</td>
+<td>全局变量裸写</td>
+</tr>
+<tr>
+<td>ISR 唤醒唯一任务</td>
+<td>Task Notification</td>
+<td>为了一个 bit 创建队列</td>
+</tr>
+<tr>
+<td>多个状态位组合等待</td>
+<td>Event Group</td>
+<td>多个信号量拼凑</td>
+</tr>
+<tr>
+<td>保护共享 I2C&#x2F;SPI</td>
+<td>Mutex</td>
+<td>二值信号量</td>
+</tr>
+<tr>
+<td>串口连续字节流</td>
+<td>Stream Buffer</td>
+<td>一个字节一个队列消息</td>
+</tr>
+<tr>
+<td>变长协议包</td>
+<td>Message Buffer &#x2F; Queue 指针</td>
+<td>固定大结构体到处复制</td>
+</tr>
+<tr>
+<td>低频超时动作</td>
+<td>Software Timer</td>
+<td>新建一个只延时的任务</td>
+</tr>
+<tr>
+<td>精确定时控制</td>
+<td>硬件定时器 + 任务通知</td>
+<td>软件定时器硬凑实时控制</td>
+</tr>
+</tbody></table>
+<h2 id="十六、调试和排错清单"><a href="#十六、调试和排错清单" class="headerlink" title="十六、调试和排错清单"></a>十六、调试和排错清单</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>优先检查</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>vTaskStartScheduler()</code> 后没跑</td>
+<td>heap 不够、任务创建失败、中断优先级配置错误</td>
+</tr>
+<tr>
+<td>任务偶发 HardFault</td>
+<td>栈溢出、野指针、ISR 调了非 FromISR API</td>
+</tr>
+<tr>
+<td>低优先级任务不运行</td>
+<td>高优先级任务没有阻塞或延时</td>
+</tr>
+<tr>
+<td>队列一直满</td>
+<td>消费任务优先级太低、处理太慢、队列长度太小</td>
+</tr>
+<tr>
+<td>队列一直空</td>
+<td>生产者没发送、超时太短、句柄没初始化</td>
+</tr>
+<tr>
+<td>Mutex 死锁</td>
+<td>忘记 give、重复加锁、锁内阻塞</td>
+</tr>
+<tr>
+<td>延时不准</td>
+<td>tick 配置、系统时钟、临界区太长、中断关闭太久</td>
+</tr>
+<tr>
+<td>定时器回调卡住</td>
+<td>timer task 优先级低、回调里阻塞太久</td>
+</tr>
+<tr>
+<td>内存越来越少</td>
+<td>动态创建删除、未释放、heap 碎片</td>
+</tr>
+</tbody></table>
+<p>建议每个工程都保留这些观测：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">uxTaskGetStackHighWaterMark(task_handle);</span><br><span class="line">xPortGetFreeHeapSize();</span><br><span class="line">xPortGetMinimumEverFreeHeapSize();</span><br><span class="line">uxQueueMessagesWaiting(queue_handle);</span><br></pre></td></tr></table></figure>
+
+<p>需要看任务整体状态时，可在调试版本打开相应 trace 配置后使用 <code>uxTaskGetSystemState()</code>、<code>vTaskList()</code> 或调试器的 RTOS 线程视图；不要只凭 LED 和串口日志判断调度问题。</p>
+<h2 id="十七、快速背诵版"><a href="#十七、快速背诵版" class="headerlink" title="十七、快速背诵版"></a>十七、快速背诵版</h2><ul>
+<li>任务负责执行，队列负责传数据，信号量负责通知，Mutex 负责保护资源。</li>
+<li>ISR 里只用 <code>FromISR</code> API，并用 <code>portYIELD_FROM_ISR()</code> 触发必要的任务切换。</li>
+<li>高优先级任务必须经常阻塞，否则低优先级任务没有机会运行。</li>
+<li>周期任务用 <code>vTaskDelayUntil()</code>，简单延时才用 <code>vTaskDelay()</code>。</li>
+<li>共享外设用 Mutex，ISR 到任务用通知或二值信号量。</li>
+<li>大数据不要在队列里反复复制，传指针时要保证生命周期。</li>
+<li>打开栈溢出检测、malloc 失败 hook 和 <code>configASSERT()</code>。</li>
+<li>调试先看任务栈余量、heap 余量、队列深度和中断优先级。</li>
+<li>看到“偶发”问题，先确认所有创建 API、队列发送、信号量获取和 ISR 发送的返回值，再查栈水位和中断优先级。</li>
+</ul>
+<p>真正写工程时，API 细节以当前 FreeRTOS 版本和移植层为准；STM32 工程还要特别注意 NVIC 优先级分组、<code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code> &#x2F; <code>configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY</code>、可调用 FreeRTOS API 的中断范围，以及 CubeMX 生成配置是否和 <code>FreeRTOSConfig.h</code> 一致。</p>
+
+      </section>
+
+      
+      
+        <nav class="article-nav">
+          
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+      <div class="card-cover" background-image-lazy data-img="/images/stm32-hal-cover.jpg"></div>
+    
+    <div class="card-text">
+      
+        <a href="/2026/07/28/stm32-hal-cubemx-api-register-quick-reference/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">STM32 HAL 库常用 API 速查：配合 CubeMX 理解外设与寄存器</h2>
+        </a>
+      
+      <div class="card-text--row">Older</div>
+    </div>
+  </article>
+</div>
+          
+        </nav>
+      
+
+      <section class="page-message-container layout-padding">
+        
+
+
+  
+  
+
+  
+  
+
+
+      </section>
+    </div>
+    <div class="widget-info">
+      <section class="widget-author widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-body">
+    
+      <img src="https://github.com/afterTvT.png" class="soft-size--round soft-style--box" alt="afterTvT">
+    
+    
+      <h2>afterTvT</h2>
+    
+    
+      <p>记录学习、技术与生活</p>
+    
+
+    <div class="count-box">
+      <div class="count-box--item">
+        <svg class="icon icon-article" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M240.51564747 647.74217627h196.07203239c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806V165.10332731c0-33.18142087-30.16492806-60.32985613-60.32985612-60.32985611H245.04038668C225.43318342 104.7734712 210.35071939 119.85593522 210.35071939 139.46313845V617.57724821c0 16.59071043 13.57421762 30.16492806 30.16492808 30.16492806z m663.62841731-452.47392089v482.63884894c0 33.18142087-27.14843525 60.32985613-60.32985612 60.32985613H180.18579134c-33.18142087 0-60.32985613-27.14843525-60.32985612-60.32985613V195.26825538c-49.77213131 0-90.49478418 40.72265287-90.49478417 90.49478417v452.4739209c0 49.77213131 40.72265287 90.49478418 90.49478417 90.49478417h286.56681657c16.59071043 0 30.16492806 13.57421762 30.16492807 30.16492807s13.57421762 30.16492806 30.16492805 30.16492806h90.49478418c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806s13.57421762-30.16492806 30.16492807-30.16492807h286.56681657c49.77213131 0 90.49478418-40.72265287 90.49478417-90.49478417V285.76303955c0-49.77213131-40.72265287-90.49478418-90.49478417-90.49478417zM587.41232014 647.74217627h191.54729318c19.60720323 0 34.68966726-15.08246403 34.68966729-34.68966727V134.93839925c0-16.59071043-13.57421762-30.16492806-30.16492808-30.16492805H617.57724821c-30.16492806 0-60.32985613 27.14843525-60.32985612 60.32985611v452.4739209c0 16.59071043 13.57421762 30.16492806 30.16492805 30.16492806z" fill="currentColor"></path>
+</svg>
+        <span>6</span>
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+        1
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+        17
+      </div>
+    </div>
+  </div>
+</section>
+
+      
+
+      
+<section class="widet-notice widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-notice" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 945.02305225v28.15620663a24.27259221 24.27259221 0 0 1-24.27259221 24.27259335H394.0352a48.54518557 48.54518557 0 0 1-41.74885888-23.78714112l-110.68302222-184.47170332a132.04290333 132.04290333 0 0 1-17.47626667-48.54518557h118.4502511a200.97706667 200.97706667 0 0 1 76.21594113 14.56355556l20.38897777 133.49925888a48.54518557 48.54518557 0 0 0 36.40888888 27.67075555l16.01991111 2.91271112a24.27259221 24.27259221 0 0 1 20.38897778 25.72894889zM997.45185223 463.45481443a194.18074112 194.18074112 0 0 1-38.8361489 116.50844445 24.75804445 24.75804445 0 0 1-36.4088889 0l-34.95253333-34.95253333a24.27259221 24.27259221 0 0 1-2.91271111-30.58346667 97.09036999 97.09036999 0 0 0 0-106.79940665 24.27259221 24.27259221 0 0 1 2.91271111-30.58346666l34.95253333-34.95253334a24.75804445 24.75804445 0 0 1 18.93262223-7.28177777 26.2144 26.2144 0 0 1 17.47626667 9.70903665A194.18074112 194.18074112 0 0 1 997.45185223 463.45481443z m-194.18074112-388.36148111v776.72296335a48.54518557 48.54518557 0 0 1-48.54518556 48.54518443h-28.64165888a48.54518557 48.54518557 0 0 1-33.98163001-14.07810332l-145.63555556-143.20829668A291.27111111 291.27111111 0 0 0 342.57730333 657.63555556H172.18370333a145.63555556 145.63555556 0 0 1-145.63555556-145.63555556v-97.09036999a145.63555556 145.63555556 0 0 1 145.63555556-145.63555556h170.3936a291.27111111 291.27111111 0 0 0 206.31703779-85.43952668l145.63555555-143.20829554a48.54518557 48.54518557 0 0 1 33.98162888-14.07810446H754.72592555a48.54518557 48.54518557 0 0 1 48.54518556 48.54518555z" fill="currentColor"></path>
+</svg>
+    <span>NOTICE</span>
+  </div>
+  <div class="widget-body">
+    <p>flex-block主题部分重构，详情查看https://github.com/miiiku/flex-block</p>
+  </div>
+</section>
+
+
+      <section class="widget-categories widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+      <span>CATEGORIES</span>
+  </div>
+  <div class="widget-body">
+    <ul class="categories-list">
+      
+        <li class="categories-list-item">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/">
+            技术笔记 (6)
+          </a>
+        </li>
+        
+    </ul>
+  </div>
+</section>
+
+      <section class="widget-tags widget-item  layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+    <span>TAGS</span>
+  </div>
+  <div class="widget-body">
+    <div class="tags-cloud">
+      <a href="/tags/C/" style="font-size: 10px;" class="tags-cloud-0">C++</a> <a href="/tags/CubeMX/" style="font-size: 10px;" class="tags-cloud-0">CubeMX</a> <a href="/tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 10px;" class="tags-cloud-0">C语言</a> <a href="/tags/FreeRTOS/" style="font-size: 10px;" class="tags-cloud-0">FreeRTOS</a> <a href="/tags/GitHub-Pages/" style="font-size: 10px;" class="tags-cloud-0">GitHub Pages</a> <a href="/tags/HAL/" style="font-size: 10px;" class="tags-cloud-0">HAL</a> <a href="/tags/Hexo/" style="font-size: 10px;" class="tags-cloud-0">Hexo</a> <a href="/tags/OpenCV/" style="font-size: 10px;" class="tags-cloud-0">OpenCV</a> <a href="/tags/PID/" style="font-size: 10px;" class="tags-cloud-0">PID</a> <a href="/tags/RTOS/" style="font-size: 10px;" class="tags-cloud-0">RTOS</a> <a href="/tags/STM32/" style="font-size: 16.67px;" class="tags-cloud-7">STM32</a> <a href="/tags/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" style="font-size: 10px;" class="tags-cloud-0">博客搭建</a> <a href="/tags/%E5%8D%A1%E5%B0%94%E6%9B%BC%E6%BB%A4%E6%B3%A2/" style="font-size: 10px;" class="tags-cloud-0">卡尔曼滤波</a> <a href="/tags/%E5%AF%84%E5%AD%98%E5%99%A8/" style="font-size: 10px;" class="tags-cloud-0">寄存器</a> <a href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" style="font-size: 20px;" class="tags-cloud-10">嵌入式</a> <a href="/tags/%E6%8E%A7%E5%88%B6%E7%AE%97%E6%B3%95/" style="font-size: 13.33px;" class="tags-cloud-3">控制算法</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/" style="font-size: 10px;" class="tags-cloud-0">计算机视觉</a>
+    </div>
+  </div>
+</section>
+    </div>
+  </article>
+</div>
+
+    <!-- footer container -->
+<footer id="footer" class="footer">
+  <div class="footer-container">
+    
+    <div class="social-icons">
+      
+        
+      
+        
+      
+        
+      
+        
+          <a href="https://github.com/afterTvT" class="soft-size--primary soft-style--box" target="_blank" rel="noopener noreferrer">
+            <svg class="icon icon-github" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64.6 512c0 195.6 125.4 361.9 300.1 422.9 23.5 5.9 19.9-10.8 19.9-22.2v-77.6c-135.8 15.9-141.3-74-150.5-89-18.5-31.5-61.9-39.5-49-54.5 31-15.9 62.5 4 98.9 58 26.4 39.1 77.9 32.5 104.1 26 5.7-23.5 17.9-44.5 34.7-60.9-140.7-25.2-199.4-111.1-199.4-213.3 0-49.5 16.4-95.1 48.4-131.8-20.4-60.6 1.9-112.4 4.9-120.1 58.2-5.2 118.5 41.6 123.3 45.3 33.1-8.9 70.8-13.7 112.9-13.7 42.4 0 80.3 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.4-43.9 2.9 7.7 24.7 58.3 5.5 118.1 32.5 36.8 49 82.8 49 132.4 0 102.3-59 188.3-200.2 213.2 23.5 23.3 38.1 55.5 38.1 91.1v112.7c0.8 9 0 17.9 15.1 17.9C832.7 877 960.4 709.4 960.4 512.1c0-247.5-200.6-447.9-447.9-447.9C265 64.1 64.6 264.5 64.6 512z"></path>
+</svg>
+          </a>
+        
+      
+        
+      
+    </div>
+     
+    <p>&copy; 2026 <a href="/" target="_blank">afterTvT</a></p>
+
+    
+
+    <p>Powered by <a href="https://hexo.io" target="_blank" rel="noopener noreferrer">Hexo</a> Theme - <a href="https://github.com/miiiku/flex-block" target="_blank" rel="noopener noreferrer author">flex-block</a></p>
+
+    <p>
+      <a href="javascript:;" id="theme-light">🌞 浅色</a>
+      <a href="javascript:;" id="theme-dark">🌛 深色</a>
+      <a href="javascript:;" id="theme-auto">🤖️ 自动</a>
+    </p>
+  </div>
+</footer>
+  </div>
+
+  <div class="back-to-top-fixed soft-size--round soft-style--box">
+    <svg class="icon icon-back-to-top" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M725.333333 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733333s42.666667-17.066667 59.733333 0l213.333333 213.333333c17.066667 17.066667 17.066667 42.666667 0 59.733333C746.666667 422.4 738.133333 426.666667 725.333333 426.666667z"></path>
+      <path d="M298.666667 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8-17.066667-17.066667-17.066667-42.666667 0-59.733333l213.333333-213.333333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733333l-213.333333 213.333333C320 422.4 311.466667 426.666667 298.666667 426.666667z"></path>
+      <path d="M512 896c-25.6 0-42.666667-17.066667-42.666667-42.666667L469.333333 170.666667c0-25.6 17.066667-42.666667 42.666667-42.666667s42.666667 17.066667 42.666667 42.666667l0 682.666667C554.666667 878.933333 537.6 896 512 896z"></path>
+    </svg>
+  </div>
+
+  
+  
+
+
+
+
+
+
+
+
+<!-- copy button  -->
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
+
+<!-- https://clipboardjs.com/ -->
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+  
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+  
+  <!-- 尾部用户自定义相关内容 -->
+</body>
+</html>
