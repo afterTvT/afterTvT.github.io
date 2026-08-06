@@ -1337,3 +1337,132 @@ html.show-mobile-nav .navbar-list {
     display: none;
   }
 }
+.ubuntu-reference-site {
+  --ubuntu-orange: #f97316;
+  --ubuntu-yellow: #facc15;
+  --ubuntu-panel: rgba(17,24,39,0.88);
+  --ubuntu-panel-soft: rgba(17,24,39,0.72);
+  --ubuntu-line: rgba(255,255,255,0.13);
+  min-height: 100vh;
+  color: #f8fafc;
+  background-color: #111827;
+  background-image: linear-gradient(180deg, rgba(17,24,39,0.72), rgba(17,24,39,0.94) 48%, rgba(17,24,39,0.98)), url("/images/ubuntu-shark-wallpaper.jpg");
+  background-attachment: fixed;
+  background-position: center top;
+  background-size: cover;
+}
+.ubuntu-reference-site .header-container {
+  background: linear-gradient(180deg, rgba(17,24,39,0.12), rgba(17,24,39,0.74));
+}
+.ubuntu-reference-site .header-container.post .post-image {
+  opacity: 0.28;
+  filter: saturate(0.8) contrast(1.05);
+}
+.ubuntu-reference-site .post-text {
+  text-shadow: 0 2px 18px rgba(0,0,0,0.42);
+}
+.ubuntu-reference-post {
+  position: relative;
+  z-index: 1;
+}
+.ubuntu-reference-post .article-entry {
+  color: #e5e7eb;
+  background: var(--ubuntu-panel);
+  border: 1px solid var(--ubuntu-line);
+  border-top: 3px solid var(--ubuntu-orange);
+  box-shadow: 0 24px 70px rgba(0,0,0,0.22);
+  backdrop-filter: blur(12px);
+}
+.ubuntu-reference-post .article-entry:first-child {
+  background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(17,24,39,0.92) 44%), var(--ubuntu-panel);
+}
+.ubuntu-reference-post .article-entry h1,
+.ubuntu-reference-post .article-entry h2,
+.ubuntu-reference-post .article-entry h3 {
+  color: #fff7ed;
+  border-color: var(--ubuntu-line);
+}
+.ubuntu-reference-post .article-entry h2 {
+  position: relative;
+  padding-left: 18px;
+}
+.ubuntu-reference-post .article-entry h2:before {
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+  width: 6px;
+  height: 1em;
+  border-radius: 999px;
+  content: '';
+  background: var(--ubuntu-orange);
+}
+.ubuntu-reference-post .article-entry h3 {
+  color: #fed7aa;
+}
+.ubuntu-reference-post .article-entry p,
+.ubuntu-reference-post .article-entry li {
+  color: #dbe4ee;
+}
+.ubuntu-reference-post .article-entry strong {
+  color: #fff7ed;
+}
+.ubuntu-reference-post .article-entry a {
+  color: #fdba74;
+  border-color: rgba(253,186,116,0.45);
+}
+.ubuntu-reference-post .article-entry blockquote {
+  margin-left: 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--ubuntu-yellow);
+  color: #fef3c7;
+  background: rgba(250,204,21,0.1);
+  border-radius: 0 8px 8px 0;
+}
+.ubuntu-reference-post .article-entry table {
+  display: block;
+  overflow-x: auto;
+  white-space: normal;
+}
+.ubuntu-reference-post .article-entry th {
+  color: #fed7aa;
+  border-color: rgba(253,186,116,0.55);
+}
+.ubuntu-reference-post .article-entry td {
+  border-color: var(--ubuntu-line);
+}
+.ubuntu-reference-post .article-entry code:not(pre code) {
+  color: #fde68a;
+  background: rgba(249,115,22,0.16);
+  border: 1px solid rgba(249,115,22,0.2);
+  border-radius: 4px;
+}
+.ubuntu-reference-post .article-entry figure.highlight,
+.ubuntu-reference-post .article-entry pre {
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.ubuntu-reference-post .widget-info {
+  color: #e5e7eb;
+}
+.ubuntu-reference-post .widget-info .widget-title,
+.ubuntu-reference-post .widget-info a {
+  color: #fed7aa;
+}
+.ubuntu-reference-post .widget-info .widget-body {
+  background: var(--ubuntu-panel-soft);
+  border: 1px solid var(--ubuntu-line);
+  border-radius: 12px;
+  padding: 18px;
+}
+@media screen and (max-width: 767px) {
+  .ubuntu-reference-site {
+    background-attachment: scroll;
+  }
+  .ubuntu-reference-post .article-entry {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .ubuntu-reference-post .article-entry table {
+    font-size: 12px;
+  }
+}
